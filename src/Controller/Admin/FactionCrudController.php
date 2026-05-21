@@ -11,6 +11,8 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\TextEditorField;
 
 class FactionCrudController extends AbstractCrudController
 {
+    public const INDEX = 'index';
+
     public static function getEntityFqcn(): string
     {
         return Faction::class;
@@ -34,3 +36,4 @@ class FactionCrudController extends AbstractCrudController
         ];
     }
 }
+

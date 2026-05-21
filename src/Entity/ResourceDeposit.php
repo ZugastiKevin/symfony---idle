@@ -23,13 +23,19 @@ class ResourceDeposit
     private string $resourceType;
 
     /**
-     * @var int Quantité restante
+     * Multiplicateur de richesse du filon.
+     *
+     * Exemples :
+     * 0.8 = pauvre
+     * 1.0 = normal
+     * 1.5 = riche
+     * 2.0 = très riche
      */
-    #[ORM\Column]
-    private int $quantity;
+    #[ORM\Column(type: 'float')]
+    private float $richness = 1.0;
 
     /**
-     * @var bool Indique si le dépôt a déjà été récolté ou s'il est inutilisable.
+     * @var bool Indique si le filon est déjà exploité/réservé.
      */
     #[ORM\Column]
     private bool $isClaimed = false;
@@ -38,10 +44,10 @@ class ResourceDeposit
     #[ORM\JoinColumn(nullable: false)]
     private ?Road $road = null;
 
-    public function __construct(string $resourceType, int $initialQuantity = 10)
+    public function __construct(string $resourceType, float $richness = 1.0)
     {
         $this->resourceType = $resourceType;
-        $this->quantity = $initialQuantity;
+        $this->richness = $richness;
     }
 
     public function getId(): ?int
@@ -61,14 +67,14 @@ class ResourceDeposit
         return $this;
     }
 
-    public function getQuantity(): int
+    public function getRichness(): float
     {
-        return $this->quantity;
+        return $this->richness;
     }
 
-    public function setQuantity(int $quantity): static
+    public function setRichness(float $richness): static
     {
-        $this->quantity = $quantity;
+        $this->richness = $richness;
 
         return $this;
     }

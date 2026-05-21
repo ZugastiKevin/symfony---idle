@@ -12,6 +12,8 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\NumberField;
 
 class BuildingCrudController extends AbstractCrudController
 {
+    public const INDEX = 'index';
+
     public static function getEntityFqcn(): string
     {
         return Building::class;
@@ -32,7 +34,7 @@ class BuildingCrudController extends AbstractCrudController
             NumberField::new('latitudeBuild')->setLabel('Latitude'),
             NumberField::new('longitudeBuild')->setLabel('Longitude'),
             IntegerField::new('level')->setLabel('Niveau'),
-            AssociationField::new('buildingType')->setLabel('Type'),
+            AssociationField::new('buildingType')->setLabel('Type de Bâtiment'),
             AssociationField::new('user')->setLabel('Utilisateur'),
             AssociationField::new('game')->setLabel('Jeu'),
             AssociationField::new('chunk')->setLabel('Chunk'),

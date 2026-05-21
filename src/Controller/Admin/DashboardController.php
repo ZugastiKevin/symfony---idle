@@ -4,10 +4,7 @@ namespace App\Controller\Admin;
 
 use App\Controller\Admin\UserCrudController;
 use App\Controller\Admin\BuildingCrudController;
-use App\Controller\Admin\FactionCrudController;
-use App\Entity\Faction;
-use App\Entity\User;
-use App\Entity\Building;
+use App\Controller\Admin\BuildingTypeCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
@@ -35,8 +32,9 @@ class DashboardController extends AbstractDashboardController
     public function configureMenuItems(): iterable
     {
         yield MenuItem::linkToDashboard('Dashboard', 'fa fa-home');
-        yield MenuItem::linkToCrud('Factions', 'fas fa-shield', Faction::class);
-        yield MenuItem::linkToCrud('Users', 'fas fa-users', User::class);
-        yield MenuItem::linkToCrud('Buildings', 'fas fa-building', Building::class);
+        yield MenuItem::linkTo(FactionCrudController::class, 'Factions', 'fas fa-shield')->setAction(FactionCrudController::INDEX);
+        yield MenuItem::linkTo(UserCrudController::class, 'Users', 'fas fa-users')->setAction(UserCrudController::INDEX);
+        yield MenuItem::linkTo(BuildingCrudController::class, 'Buildings', 'fas fa-building')->setAction(BuildingCrudController::INDEX);
+        yield MenuItem::linkTo(BuildingTypeCrudController::class, 'Types', 'fas fa-layer-group')->setAction(BuildingTypeCrudController::INDEX);
     }
 }

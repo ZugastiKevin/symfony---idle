@@ -58,6 +58,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(targetEntity: Building::class, mappedBy: 'user')]
     private Collection $buildings;
 
+    #[ORM\OneToOne(mappedBy: 'player', targetEntity: PlayerResource::class, cascade: ['persist', 'remove'])]
+    private ?PlayerResource $playerResource = null;
+
     public function __construct()
     {
         $this->buildings = new ArrayCollection();
@@ -230,6 +233,22 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             if ($building->getUser() === $this) {
                 $building->setUser(null);
             }
+        }
+
+        return $this;
+    }
+
+    public function getPlayerResource(): ?PlayerResource
+    {
+        return $this->playerResource;
+    }
+
+    public function setPlayerResource(PlayerResource $playerResource): static
+    {
+        $this->playerResource = $playerResource;
+
+        if ($playerResource->getPlayer() !== $this) {
+            $playerResource->setPlayer($this);
         }
 
         return $this;
