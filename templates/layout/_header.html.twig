@@ -1,0 +1,82 @@
+<header class="container" id="header">
+    {% set currentRoute = app.request.attributes.get('_route') %}
+    <nav class="header">
+        <div class="logo-container {{ currentRoute == 'home' ? 'active' : '' }}">
+            <a href="{{ path('home', {'_locale': app.request.locale}) }}">
+                <img src="{{ asset('assets/images/logo/logo.png') }}" alt="{{ 'siteName'|trans }}">
+            </a>
+        </div>
+        <div class="navbar_menu">
+            <div class="navbar_list_container">
+                <ul class="navbar_list">
+                    <li class="btn-menu-navbar {{ currentRoute == 'game' ? 'active' : '' }}">
+                        <a href="{{ path('game', {'_locale': app.request.locale}) }}">
+                            <span>{{ 'siteName'|trans }}</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="auth_zone">
+            <ul class="auth_list">
+                {% if app.user %}
+                    {% if is_granted('ROLE_ADMIN') %}
+                        <li class="btn-menu-navbar {{ currentRoute == 'admin' ? 'active' : '' }}">
+                            <a href="{{ path('admin', {'_locale': app.request.locale}) }}">
+                                <span>{{ 'admin'|trans }}</span>
+                            </a>
+                        </li>
+                    {% endif %}
+                    <li class="btn-menu-navbar">
+                        <a href="{{ path('app_logout', {'_locale': app.request.locale}) }}">
+                            <span>{{ 'logout'|trans }}</span>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="btn-menu-navbar {{ currentRoute == 'app_login' ? 'active' : '' }}">
+                        <a href="{{ path('app_login', {'_locale': app.request.locale}) }}">
+                            <span>{{ 'login'|trans }}</span>
+                        </a>
+                    </li>
+                    <li class="btn-menu-navbar {{ currentRoute == 'create_user' ? 'active' : '' }}">
+                        <a href="{{ path('create_user', {'_locale': app.request.locale}) }}">
+                            <span>{{ 'registration'|trans }}</span>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+        <div class="navbar-dropdown-toggle" data-dropdown-target="#navbar-dropdown">
+            <i class="fa-solid fa-bars"></i>
+        </div>
+        <div class="dropdown-navbar">
+            <ul id="navbar-dropdown" class="dropdown-navbar-list">
+                {% if app.user %}
+                    {% if is_granted('ROLE_ADMIN') %}
+                        <li class="btn-menu-navbar">
+                            <a href="{{ path('admin', {'_locale': app.request.locale}) }}">
+                                <span>admin</span>
+                            </a>
+                        </li>
+                    {% endif %}
+                    <li class="btn-menu-navbar">
+                        <a href="{{ path('app_logout', {'_locale': app.request.locale}) }}">
+                            <span>{{ 'logout'|trans }}</span>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="btn-menu-navbar">
+                        <a href="{{ path('app_login', {'_locale': app.request.locale}) }}">
+                            <span>{{ 'login'|trans }}</span>
+                        </a>
+                    </li>
+                    <li class="btn-menu-navbar">
+                        <a href="{{ path('create_user', {'_locale': app.request.locale}) }}">
+                            <span>{{ 'registration'|trans }}</span>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+</header>

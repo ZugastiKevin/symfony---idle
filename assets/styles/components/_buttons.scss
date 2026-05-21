@@ -1,0 +1,184 @@
+@use "../abstracts/variables" as v;
+
+@mixin menu-button(
+    $font-size: 0.8rem,
+    $uppercase: false,
+    $padding-x: 10px,
+    $padding-y: 10px
+) {
+    display: inline-block;
+    background-color: v.$color--primary;
+    border-bottom: solid 3.75px v.$color--border;
+    transition: all 0.2s ease-in-out;
+
+    a {
+        display: block;
+        padding: $padding-y $padding-x;
+        color: v.$color-white;
+        font-size: $font-size;
+        text-transform: if(sass($uppercase): uppercase; else: none);
+    }
+
+    &:hover {
+        background-color: v.$color--primary-hover;
+        border-bottom: solid 3.75px v.$color--info;
+
+        a {
+            color: v.$color-white;
+            text-shadow: 0 0 10px v.$color-black;
+        }
+    }
+
+    &.active {
+        border-bottom: solid 3.75px v.$color--info;
+    }
+}
+
+.btn-menu-navbar {
+    @include menu-button(1rem, true, 15px);
+}
+
+.btn-menu {
+    @include menu-button(0.8rem, true);
+}
+
+.btn-menu-dropdown {
+    position: relative;
+    width: 100%;
+    z-index: 2;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    padding: 7.5px 10px 8px 10px;
+    background-color: v.$color-old-antique-gold;
+    border-top: solid 3.75px v.$color-golden-twilight;
+    border-bottom: solid 3.75px v.$color-golden-twilight;
+
+    transition: all 0.2s ease-in-out;
+
+    svg {
+        font-size: 1rem;
+        transition: transform 0.2s ease-in-out;
+    }
+}
+
+.btn-menu-dropdown:hover,
+.btn-menu-dropdown.dropdown-open {
+    background-color: v.$color-antique-gold;
+    border-top: solid 3.75px v.$color-blue-eidolon;
+    border-bottom: solid 3.75px v.$color-blue-eidolon;
+
+    li {
+        color: v.$color-white;
+        text-shadow: 0 0 10px v.$color-black;
+    }
+}
+
+.language-dropdown-toggle:hover svg,
+.language-dropdown-toggle.dropdown-open svg,
+.theme-dropdown-toggle:hover svg,
+.theme-dropdown-toggle.dropdown-open svg {
+    transform: rotate(180deg);
+}
+
+.switch-group {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 1rem 0 4rem 0 !important;
+
+    .switch-label {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .switch-text {
+        color: v.$color-white;
+        font-size: 1rem;
+        font-weight: 500;
+    }
+
+    .switch-input {
+        display: none;
+
+        &:checked + .switch-slider {
+            background-color: v.$color-blue-eidolon;
+
+            &::before {
+                transform: translateX(26px);
+            }
+
+            &:hover {
+                background-color: rgba(v.$color-blue-eidolon, 0.5);
+            }
+        }
+    }
+
+    .switch-slider {
+        position: relative;
+        display: inline-block;
+        width: 52px;
+        height: 26px;
+        background-color: rgba(v.$color-antique-gold, 0.3);
+        border-radius: 34px;
+        transition: background-color 0.3s ease;
+
+        &::before {
+            content: "";
+            position: absolute;
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: v.$color-golden-twilight;
+            border-radius: 50%;
+            transition: transform 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        &:hover {
+            background-color: rgba(v.$color-antique-gold, 0.5);
+        }
+    }
+}
+
+.forgot-password-link {
+    color: v.$color-blue-eidolon;
+    border-bottom: solid 3.75px v.$color-blue-eidolon;
+    transition: color 0.3s ease;
+
+    &:hover {
+        color: v.$color-golden-twilight;
+        border-color: v.$color-golden-twilight;
+    }
+}
+
+.btn-warming {
+    padding: 10px 2rem 14px;
+}
+
+.reset-btn {
+    flex: 0 0 auto;
+    padding: 9px 12px 16px;
+    cursor: pointer;
+    background-color: transparent;
+    //background-image: url("");
+    background-size: contain;
+    background-repeat: round;
+    border: none;
+    color: v.$color-white;
+
+    .redo-icon {
+        text-shadow: 1px 1px 0 black, -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black;
+    }
+    transition: all 0.2s ease-in-out;
+}
+
+// .reset-btn:hover {
+//     //background-image: url("");
+// }

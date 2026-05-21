@@ -1,0 +1,28 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Choix de faction{% endblock %}
+
+{% block body %}
+    <div id="form" class="form-background">
+        <div class="form">
+            <div class="form-content">
+                <div class="mix">
+                    <div class="headline">
+                        <h3 class="text-headline">Choisissez votre faction</h3>
+                        <p class="text-subheadline">Ce choix est demandé une seule fois à votre entrée dans la partie.</p>
+                    </div>
+                </div>
+
+                {{ form_start(form, { attr: { class: 'all-form' } }) }}
+                    <div class="spliter">
+                        <div class="left">
+                            {{ form_row(form.faction) }}
+                        </div>
+                    </div>
+
+                    <input class="btn btn-lg btn-primary" type="submit" value="Valider">
+                {{ form_end(form) }}
+            </div>
+        </div>
+    </div>
+{% endblock %}

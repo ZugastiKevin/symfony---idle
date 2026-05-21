@@ -1,0 +1,21 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}game{% endblock %}
+
+{% block body %}
+    {{ encore_entry_link_tags('app') }}
+    {{ encore_entry_script_tags('app') }}
+    <section id="game">
+        <div id="sideBar">
+            {% if app.user.longitudeBase %}
+                <button id="baseBtn" data-mode="return">retour aux camp</button>
+            {% else %}
+                <button id="baseBtn" data-mode="create">Créer mon camp</button>
+            {% endif %}
+            <button id="requestApiRoadsAndChunksBtn">demande api chunk</button>
+        </div>
+        <div class="game container">
+            <div id="map"></div>
+        </div>
+    </section>
+{% endblock %}

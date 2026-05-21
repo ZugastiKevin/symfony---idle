@@ -1,0 +1,20 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'siteName'|trans }}{% endblock %}
+
+{% block body %}
+    <section id="home">
+        <div class="home container">
+            <h1>Idle</h1>
+
+            Todo:
+            <ul>
+                <li>Create first layout with comparing player or invite</li>
+                <li>Add scss for this page</li>
+                <li>php bin/console app:world:run-expansion-loop 100 150</li>
+            </ul>
+
+            <a href="{{ path('game') }}">Game</a>
+        </div>
+    </section>
+{% endblock %}
