@@ -39,10 +39,13 @@ final class GameController extends AbstractController
             return $this->redirectToRoute('game');
         }
 
-        $form = $this->createForm(FactionChoiceType::class, $user);
+        $form = $this->createForm(FactionChoiceType::class);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $selectedFaction = $form->get('factions')->getData();
+            $user->setFaction($selectedFaction);
+            $entityManager->persist($user);
             $entityManager->flush();
 
             return $this->redirectToRoute('game');
