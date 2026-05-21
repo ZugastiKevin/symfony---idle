@@ -18,3 +18,62 @@
     }
 }
 
+.factions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin: 2rem 0;
+}
+
+.faction-card {
+    position: relative;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    background: linear-gradient(135deg, #1f2933, #111827);
+    border: 2px solid #444;
+    transition: all 0.3s ease;
+}
+
+.faction-card input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+
+    &:checked + .faction-label {
+        border-color: #fff;
+        background: linear-gradient(135deg, #2d3748, #1a202c);
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+    }
+}
+
+.faction-label {
+    display: block;
+    padding: 1.5rem;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+    border-radius: 0.5rem;
+
+    &:hover {
+        background: linear-gradient(135deg, #2d3748, #1a202c);
+        border-color: #666;
+    }
+}
+
+.faction-content {
+    margin-top: 0.5rem;
+}
+
+.faction-name {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #fff;
+}
+
+.faction-description {
+    margin: 0.5rem 0 0;
+    font-size: 0.9rem;
+    color: #aaa;
+    line-height: 1.4;
+}

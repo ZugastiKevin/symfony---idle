@@ -14,13 +14,23 @@
                 </div>
 
                 {{ form_start(form, { attr: { class: 'all-form' } }) }}
-                    <div class="spliter">
-                        <div class="left">
-                            {{ form_row(form.faction) }}
-                        </div>
+                    <div class="factions-grid">
+                        {% for faction_field in form.faction %}
+                            <div class="faction-card">
+                                <label class="faction-label">
+                                    {{ faction_field }}
+                                    <div class="faction-content">
+                                        <h4 class="faction-name">{{ faction_field.vars.data.name }}</h4>
+                                        <p class="faction-description">{{ faction_field.vars.data.description }}</p>
+                                    </div>
+                                </label>
+                            </div>
+                        {% endfor %}
                     </div>
 
-                    <input class="btn btn-lg btn-primary" type="submit" value="Valider">
+                    <div style="text-align: center; margin-top: 2rem;">
+                        <button class="btn btn-lg btn-primary" type="submit">Rejoindre cette faction</button>
+                    </div>
                 {{ form_end(form) }}
             </div>
         </div>
