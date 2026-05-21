@@ -24,6 +24,9 @@ class BuildingType
     #[ORM\Column]
     private ?float $production_rate = null;
 
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $resourceType = null;
+
     #[ORM\Column]
     private ?int $max_level = null;
 
@@ -75,6 +78,18 @@ class BuildingType
     public function setProductionRate(float $production_rate): static
     {
         $this->production_rate = $production_rate;
+
+        return $this;
+    }
+
+    public function getResourceType(): ?string
+    {
+        return $this->resourceType;
+    }
+
+    public function setResourceType(?string $resourceType): static
+    {
+        $this->resourceType = $resourceType;
 
         return $this;
     }
