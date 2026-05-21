@@ -37,7 +37,7 @@ class UserCrudController extends AbstractCrudController
         return $actions
             ->disable(Action::NEW, Action::DELETE)
             ->update(Crud::PAGE_INDEX, Action::EDIT, function (Action $action) {
-                return $action->setLabel('Modifier le pseudo');
+                return $action->setLabel('Modifier');
             });
     }
 
@@ -47,7 +47,7 @@ class UserCrudController extends AbstractCrudController
             IdField::new('id')->onlyOnIndex(),
             EmailField::new('email', 'Email')->setFormTypeOption('disabled', true),
             TextField::new('pseudo', 'Pseudo'),
-            AssociationField::new('faction', 'Faction')->setCrudController(FactionCrudController::class),
+            AssociationField::new('faction', 'Faction'),
             ArrayField::new('roles', 'Rôles')->onlyOnIndex(),
             DateTimeField::new('created_at', 'Créé le')->hideOnForm(),
         ];

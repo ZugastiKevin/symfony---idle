@@ -12,7 +12,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractDashboardController;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
 use Symfony\Component\HttpFoundation\Response;
 
-#[isGranted('ROLE_ADMIN')]
+#[IsGranted('ROLE_ADMIN')]
 #[AdminDashboard(routePath: '/admin', routeName: 'admin')]
 class DashboardController extends AbstractDashboardController
 {
@@ -31,16 +31,9 @@ class DashboardController extends AbstractDashboardController
 
     public function configureMenuItems(): iterable
     {
-        // Dashboard principal
         yield MenuItem::linkToDashboard('Dashboard', 'fa fa-home');
-
-        // Faction
-        yield MenuItem::linkTo(FactionCrudController::class, 'Factions', 'fas fa-shield');
-
-        // User
-        yield MenuItem::linkTo(UserCrudController::class, 'Users', 'fas fa-users');
-
-        // Building
-        yield MenuItem::linkTo(BuildingCrudController::class, 'Buildings', 'fas fa-building');
+        yield MenuItem::linkToCrud('Factions', 'fas fa-shield', FactionCrudController::getEntityFqcn());
+        yield MenuItem::linkToCrud('Users', 'fas fa-users', UserCrudController::getEntityFqcn());
+        yield MenuItem::linkToCrud('Buildings', 'fas fa-building', BuildingCrudController::getEntityFqcn());
     }
 }
