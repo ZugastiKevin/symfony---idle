@@ -10,6 +10,7 @@ use App\Repository\ChunkRepository;
 use App\Repository\RoadRepository;
 use App\Service\EnemyBaseService;
 use App\Service\GenerateChunkService;
+use App\Service\ResourceProductionService;
 use App\Service\RoadService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -26,8 +27,11 @@ final class GameApiController extends AbstractController
     // WORLD STATE
     // -------------------------
     #[Route('/api/world-state', name: 'api_world_state', methods: ['GET'])]
-    public function worldState(BuildingRepository $buildingRepo): JsonResponse
-    {
+    public function worldState(
+        BuildingRepository $buildingRepo,
+        ResourceProductionService $resourceProductionService,
+        EntityManagerInterface $em
+    ): JsonResponse {
         $user = $this->getUser();
 
         if (!$user instanceof User) {
@@ -39,6 +43,9 @@ final class GameApiController extends AbstractController
         if (!$game) {
             return $this->json([]);
         }
+
+        $playerResource = $resourceProductionService->updatePlayerResources($user);
+        $em->flush();
 
         $buildingData = $buildingRepo->getBuildingsDataForGame($game);
 
@@ -61,7 +68,40 @@ final class GameApiController extends AbstractController
 
         return $this->json([
             'buildings' => $buildingData,
-            'bases' => $bases
+            'bases' => $bases,
+            'resources' => [
+                'iron' => $playerResource->getIron(),
+                'stone' => $playerResource->getStone(),
+                'water' => $playerResource->getWater(),
+                'oil' => $playerResource->getOil(),
+                'updatedAt' => $playerResource->getUpdatedAt()?->format('c'),
+            ],
+        ]);
+    }
+
+    // -------------------------
+    // PLAYER RESOURCES
+    // -------------------------
+    #[Route('/api/player-resources', name: 'api_player_resources', methods: ['GET'])]
+    public function playerResources(
+        ResourceProductionService $resourceProductionService,
+        EntityManagerInterface $em
+    ): JsonResponse {
+        $user = $this->getUser();
+
+        if (!$user instanceof User) {
+            return $this->json([], 401);
+        }
+
+        $playerResource = $resourceProductionService->updatePlayerResources($user);
+        $em->flush();
+
+        return $this->json([
+            'iron' => $playerResource->getIron(),
+            'stone' => $playerResource->getStone(),
+            'water' => $playerResource->getWater(),
+            'oil' => $playerResource->getOil(),
+            'updatedAt' => $playerResource->getUpdatedAt()?->format('c'),
         ]);
     }
 

@@ -5,6 +5,7 @@ namespace App\Controller\Admin;
 use App\Entity\BuildingType;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
+use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IntegerField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
@@ -33,6 +34,16 @@ class BuildingTypeCrudController extends AbstractCrudController
             TextField::new('name')->setLabel('Nom'),
             IntegerField::new('base_cost')->setLabel('Coût de base'),
             IntegerField::new('production_rate')->setLabel('Taux de production'),
+            ChoiceField::new('resourceType')
+                ->setLabel('Type de ressource')
+                ->setChoices([
+                    'Aucune' => null,
+                    'Fer' => 'iron',
+                    'Pierre' => 'stone',
+                    'Eau' => 'water',
+                    'Petrole' => 'oil',
+                ])
+                ->setFormTypeOption('required', false),
             IntegerField::new('max_level')->setLabel('Niveau Max'),
         ];
     }
