@@ -4,8 +4,6 @@ namespace App\Entity;
 
 use App\Entity\Road;
 use App\Repository\ResourceDepositRepository;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ResourceDepositRepository::class)]
@@ -16,11 +14,15 @@ class ResourceDeposit
     #[ORM\Column]
     private ?int $id = null;
 
-    /**
-     * @var string Type de ressource (EAU, PIERRE, FER, PETROL)
-     */
-    #[ORM\Column(length: 50)]
-    private string $resourceType;
+    #[ORM\ManyToOne(targetEntity: ResourceType::class)]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?ResourceType $resourceType = null;
+
+    #[ORM\Column(type: 'float')]
+    private float $latitude;
+
+    #[ORM\Column(type: 'float')]
+    private float $longitude;
 
     /**
      * Multiplicateur de richesse du filon.
@@ -44,7 +46,7 @@ class ResourceDeposit
     #[ORM\JoinColumn(nullable: false)]
     private ?Road $road = null;
 
-    public function __construct(string $resourceType, float $richness = 1.0)
+    public function __construct(ResourceType $resourceType, float $richness = 1.0)
     {
         $this->resourceType = $resourceType;
         $this->richness = $richness;
@@ -55,14 +57,38 @@ class ResourceDeposit
         return $this->id;
     }
 
-    public function getResourceType(): string
+    public function getResourceType(): ?ResourceType
     {
         return $this->resourceType;
     }
 
-    public function setResourceType(string $resourceType): static
+    public function setResourceType(?ResourceType $resourceType): static
     {
         $this->resourceType = $resourceType;
+
+        return $this;
+    }
+
+    public function getLatitude(): float
+    {
+        return $this->latitude;
+    }
+
+    public function setLatitude(float $latitude): static
+    {
+        $this->latitude = $latitude;
+
+        return $this;
+    }
+
+    public function getLongitude(): float
+    {
+        return $this->longitude;
+    }
+
+    public function setLongitude(float $longitude): static
+    {
+        $this->longitude = $longitude;
 
         return $this;
     }

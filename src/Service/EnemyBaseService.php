@@ -4,26 +4,37 @@ namespace App\Service;
 
 use App\Entity\Game;
 use App\Entity\User;
+use App\Repository\BuildingRepository;
 
 class EnemyBaseService
 {
-    public function isTooCloseToEnemy(float $lat, float $lng, Game $game, User $me, float $minDistance = 1000): bool
-    {
-        foreach ($game->getUsers() as $player) {
+    private $buildingRepo;
 
-            if ($player->getId() === $me->getId()) {
+    public function __construct(BuildingRepository $buildingRepo)
+    {
+        $this->buildingRepo = $buildingRepo;
+    }
+
+    public function isTooCloseToEnemy(float $lat, float $lng, Game $game, User $user, float $minDistance = 1000): bool
+    {
+        $enemies = $this->buildingRepo->findBy(['game' => $game]);
+
+
+        foreach ($enemies as $building) {
+
+            if ($building->getUser()->getId() === $user->getId()) {
                 continue;
             }
-
-            if (!$player->getLatitudeBase()) {
+            
+            if ($building->getLatitudeBuild() === null) {
                 continue;
             }
 
             $distance = $this->distance(
                 $lat,
                 $lng,
-                $player->getLatitudeBase(),
-                $player->getLongitudeBase()
+                $building->getLatitudeBuild(),
+                $building->getLongitudeBuild()
             );
 
             if ($distance < $minDistance) {

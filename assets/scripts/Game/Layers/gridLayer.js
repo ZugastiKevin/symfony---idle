@@ -1,4 +1,4 @@
-import L from 'leaflet';
+import L from '../../LeafletWrapper.js';
 import { debugLog } from '../Config/debug.js';
 import { CHUNK_SIZE } from '../Config/chunk.js';
 import { getMap, isGridLayerActive } from '../map.js';

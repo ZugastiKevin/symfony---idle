@@ -3,9 +3,11 @@
 namespace App\Service;
 
 use App\Entity\Chunk;
+use App\Entity\ResourceDeposit;
 use App\Entity\Road;
 use App\Repository\ChunkRepository;
 use App\Repository\RoadRepository;
+use App\Repository\ResourceTypeRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 
@@ -17,10 +19,11 @@ class GenerateChunkService
 {
     public function __construct(
         private RoadRepository $roadRepository,
+        private ResourceTypeRepository $resourceTypeRepository,
         private ChunkRepository $chunkRepository,
         private EntityManagerInterface $em,
         private LoggerInterface $logger,
-        private CoordinateService $coordinateService // Injection du service de coordonnées
+        private CoordinateService $coordinateService
     ) {}
 
     /**
@@ -33,20 +36,52 @@ class GenerateChunkService
      */
     public function generate(float $lat, float $lng): array
     {
-        // Utilise le service centralisé pour obtenir l'ID du chunk
         $chunkId = $this->coordinateService->getChunkId($lat, $lng);
-
-        // Récupère ou crée le chunk
         $chunk = $this->chunkRepository->findOrCreate($chunkId);
 
-        // Évite la double génération en vérifiant si des routes existent déjà
         if ($chunk->getRoads()->count() > 0) {
             $this->logger->info("Génération de routes annulée pour le chunk {$chunkId} : déjà peuplé.");
             return [];
         }
+        
+        $this->logger->info("Démarrage de la génération de routes pour le chunk {$chunkId}...");
+        $roads = $this->fetchFromOverpass($lat, $lng, $chunk);
 
-        $this->logger->info("Début de la génération de routes pour le chunk {$chunkId} via Overpass API.");
-        return $this->fetchFromOverpass($lat, $lng, $chunk);
+        $allTypes = $this->resourceTypeRepository->findAll();
+
+        if (empty($allTypes)) {
+            $this->logger->warning("Aucun type de ressource trouvé en base de données !");
+            return $roads;
+        }
+
+        $depositCount = rand(0, 2);
+
+        if ($depositCount > 0 && !empty($roads)) {
+            $shuffled = $roads;
+            shuffle($shuffled);
+            $selectedRoads = array_slice($shuffled, 0, min($depositCount, count($shuffled)));
+
+            foreach ($selectedRoads as $road) {
+                $randomType = $allTypes[array_rand($allTypes)];
+                    
+                $deposit = new ResourceDeposit($randomType, (float)rand(8, 20) / 10);
+                $deposit->setRoad($road);
+                    
+                $points = $road->getPoints();
+                if (!empty($points)) {
+                    $deposit->setLatitude((float)$points[0][0]);
+                    $deposit->setLongitude((float)$points[0][1]);
+                }
+                    
+                $this->em->persist($deposit);
+                $this->logger->info("Dépôt [{$randomType->getCode()}] généré sur la route {$road->getId()}.");
+            }
+        }
+
+        $this->em->flush();
+            
+        $this->logger->info("Génération terminée pour le chunk {$chunkId} : " . count($roads) . " routes, {$depositCount} dépôt(s).");
+        return $roads;
     }
 
     /**
@@ -95,7 +130,7 @@ class GenerateChunkService
             return [];
         }
 
-        $result = [];
+        $roads = [];
         foreach ($data['elements'] as $way) {
             if (!isset($way['geometry']) || count($way['geometry']) < 2) continue;
 
@@ -115,11 +150,7 @@ class GenerateChunkService
             $road->setWidth(isset($way['tags']['width']) ? (float)$way['tags']['width'] : 0);
             $this->em->persist($road);
 
-            $result[] = [
-                'points' => $points,
-                'type' => $road->getType(),
-                'width' => $road->getWidth()
-            ];
+            $roads[] = $road;
         }
 
         // Met à jour la date de modification du chunk pour l'invalidation du cache
@@ -128,8 +159,8 @@ class GenerateChunkService
 
         $this->em->flush();
 
-        $this->logger->info(count($result) . " routes générées pour le chunk " . $chunk->getChunkId());
+        $this->logger->info(count($roads) . " routes générées pour le chunk " . $chunk->getChunkId());
 
-        return $result;
+        return $roads;
     }
 }

@@ -7,10 +7,10 @@ use App\Entity\User;
 use App\Repository\BuildingRepository;
 use App\Repository\BuildingTypeRepository;
 use App\Repository\ChunkRepository;
+use App\Repository\ResourceDepositRepository;
 use App\Repository\RoadRepository;
 use App\Service\EnemyBaseService;
 use App\Service\GenerateChunkService;
-use App\Service\ResourceProductionService;
 use App\Service\RoadService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -23,13 +23,18 @@ use Symfony\Contracts\Cache\CacheInterface;
 #[IsGranted('ROLE_USER')]
 final class GameApiController extends AbstractController
 {
+    private const CACHE_VERSION = 'v1';
+
+    public function __construct(
+        private readonly \App\Service\ResourceProductionService $resourceProductionService
+    ) {}
+
     // -------------------------
     // WORLD STATE
     // -------------------------
     #[Route('/api/world-state', name: 'api_world_state', methods: ['GET'])]
     public function worldState(
         BuildingRepository $buildingRepo,
-        ResourceProductionService $resourceProductionService,
         EntityManagerInterface $em
     ): JsonResponse {
         $user = $this->getUser();
@@ -44,38 +49,44 @@ final class GameApiController extends AbstractController
             return $this->json([]);
         }
 
-        $playerResource = $resourceProductionService->updatePlayerResources($user);
+        $this->resourceProductionService->updatePlayerResources($user);
         $em->flush();
 
         $buildingData = $buildingRepo->getBuildingsDataForGame($game);
 
-        $bases = [];
+        $dataPlayers = [];
 
         foreach ($game->getUsers() as $player) {
+            $baseBuilding = $buildingRepo->findBaseForUser($player);
 
-            $lat = $player->getLatitudeBase();
-            $lng = $player->getLongitudeBase();
-
-            if ($lat !== null && $lng !== null) {
-                $bases[] = [
-                    'lat' => $lat,
-                    'lng' => $lng,
+            if ($baseBuilding) {
+                $dataPlayers[] = [
+                    'lat' => $baseBuilding->getLatitudeBuild(),
+                    'lng' => $baseBuilding->getLongitudeBuild(),
+                    'faction' => strtolower($player->getFaction()?->getCode() ?? 'default'),
                     'pseudo' => $player->getPseudo(),
                     'isMe' => $player->getId() === $user->getId(),
                 ];
             }
         }
 
+        $resources = [];
+        foreach ($user->getPlayerInventories() as $inv) {
+            $resources[$inv->getResourceType()->getCode()] = $inv->getQuantity();
+        }
+
+        $updatedAt = null;
+        $firstInventory = $user->getPlayerInventories()->first();
+
+        if ($firstInventory instanceof \App\Entity\PlayerInventory) {
+            $updatedAt = $firstInventory->getUpdatedAt();
+        }
+
         return $this->json([
             'buildings' => $buildingData,
-            'bases' => $bases,
-            'resources' => [
-                'iron' => $playerResource->getIron(),
-                'stone' => $playerResource->getStone(),
-                'water' => $playerResource->getWater(),
-                'oil' => $playerResource->getOil(),
-                'updatedAt' => $playerResource->getUpdatedAt()?->format('c'),
-            ],
+            'players' => $dataPlayers,
+            'resources' => $resources,
+            'updatedAt' => $updatedAt?->format('c'),
         ]);
     }
 
@@ -84,7 +95,6 @@ final class GameApiController extends AbstractController
     // -------------------------
     #[Route('/api/player-resources', name: 'api_player_resources', methods: ['GET'])]
     public function playerResources(
-        ResourceProductionService $resourceProductionService,
         EntityManagerInterface $em
     ): JsonResponse {
         $user = $this->getUser();
@@ -93,69 +103,16 @@ final class GameApiController extends AbstractController
             return $this->json([], 401);
         }
 
-        $playerResource = $resourceProductionService->updatePlayerResources($user);
+        $this->resourceProductionService->updatePlayerResources($user);
         $em->flush();
 
         return $this->json([
-            'iron' => $playerResource->getIron(),
-            'stone' => $playerResource->getStone(),
-            'water' => $playerResource->getWater(),
-            'oil' => $playerResource->getOil(),
-            'updatedAt' => $playerResource->getUpdatedAt()?->format('c'),
+            'resources' => array_map(fn($inv) => [
+                'type' => $inv->getResourceType()->getCode(),
+                'quantity' => $inv->getQuantity()
+            ], $user->getPlayerInventories()->toArray()),
+            'updatedAt' => $user->getPlayerInventories()->first()?->getUpdatedAt()?->format('c'),
         ]);
-    }
-
-    // -------------------------
-    // CREATE BASE
-    // -------------------------
-    #[Route('/api/create-base', name: 'api_create_base', methods: ['POST'])]
-    public function createBase(
-        Request $request,
-        EntityManagerInterface $em,
-        RoadService $roadService,
-        EnemyBaseService $enemyService
-    ): JsonResponse {
-
-        $user = $this->getUser();
-
-        if (!$user instanceof User) {
-            return $this->json(['error' => 'Not logged'], 401);
-        }
-
-        if ($user->getLatitudeBase() && $user->getLongitudeBase()) {
-            return $this->json(['error' => 'Base already exists'], 400);
-        }
-
-        $data = json_decode($request->getContent(), true);
-
-        $lat = $data['lat'] ?? null;
-        $lng = $data['lng'] ?? null;
-
-        if ($lat === null || $lng === null) {
-            return $this->json(['error' => 'Invalid data'], 400);
-        }
-
-        $game = $user->getGame();
-
-        if (!$game) {
-            return $this->json(['error' => 'No active game'], 400);
-        }
-
-        if ($enemyService->isTooCloseToEnemy($lat, $lng, $game, $user)) {
-            return $this->json(['error' => 'Too close to enemy base'], 403);
-        }
-
-        if (!$roadService->isNearRoad($lat, $lng)) {
-            return $this->json(['error' => 'Must be near a road'], 403);
-        }
-
-        $user->setLatitudeBase($lat);
-        $user->setLongitudeBase($lng);
-
-        $em->persist($user);
-        $em->flush();
-
-        return $this->json(['status' => 'base_created']);
     }
 
     // -------------------------
@@ -165,22 +122,27 @@ final class GameApiController extends AbstractController
     public function build(
         Request $request,
         EntityManagerInterface $em,
+        BuildingRepository $buildingRepo,
         BuildingTypeRepository $buildingTypeRepo,
         RoadService $roadService,
         EnemyBaseService $enemyService,
         ChunkRepository $chunkRepo,
         CacheInterface $gameCache,
+        ResourceDepositRepository $depositRepo,
         \App\Service\CoordinateService $coordinateService
     ): JsonResponse {
 
         $user = $this->getUser();
-
         if (!$user instanceof User) {
             return $this->json(['error' => 'Not logged'], 401);
         }
 
-        $data = json_decode($request->getContent(), true);
+        $game = $user->getGame();
+        if (!$game) {
+            return $this->json(['error' => 'No active game'], 400);
+        }
 
+        $data = json_decode($request->getContent(), true);
         $lat = $data['lat'] ?? null;
         $lng = $data['lng'] ?? null;
         $typeId = $data['type_id'] ?? null;
@@ -189,27 +151,32 @@ final class GameApiController extends AbstractController
             return $this->json(['error' => 'Invalid data'], 400);
         }
 
-        $game = $user->getGame();
-
-        if (!$game) {
-            return $this->json(['error' => 'No active game'], 400);
+        $buildingType = $buildingTypeRepo->find($typeId);
+        if (!$buildingType) {
+            return $this->json(['error' => 'Type not found'], 404);
         }
 
-        if (!$user->getLatitudeBase()) {
-            return $this->json(['error' => 'No base'], 400);
+        $existingBase = $buildingRepo->findBaseForUser($user);
+
+        // 1. Gestion spécifique pour la création de la base
+        if ($buildingType->getName() === 'base') {
+            if ($existingBase) {
+                return $this->json(['error' => 'Base already exists'], 400);
+            }
+        }
+        // 2. Pour tout autre bâtiment, la base est obligatoire et la distance est vérifiée
+        else {
+            if (!$existingBase) {
+                return $this->json(['error' => 'You need a base to build'], 400);
+            }
+
+            $distance = $coordinateService->distance($lat, $lng, $existingBase->getLatitudeBuild(), $existingBase->getLongitudeBuild());
+            if ($distance > 500) {
+                return $this->json(['error' => 'Too far from base'], 403);
+            }
         }
 
-        $distance = $coordinateService->distance(
-            $lat,
-            $lng,
-            $user->getLatitudeBase(),
-            $user->getLongitudeBase()
-        );
-
-        if ($distance > 500) {
-            return $this->json(['error' => 'Too far from base'], 403);
-        }
-
+        // 3. Vérifications communes (Enemy proximity & Road)
         if ($enemyService->isTooCloseToEnemy($lat, $lng, $game, $user)) {
             return $this->json(['error' => 'Too close to enemy base'], 403);
         }
@@ -218,14 +185,8 @@ final class GameApiController extends AbstractController
             return $this->json(['error' => 'Must be near a road'], 403);
         }
 
-        $buildingType = $buildingTypeRepo->find($typeId);
-
-        if (!$buildingType) {
-            return $this->json(['error' => 'Type not found'], 404);
-        }
-
+        // 4. Persistance du bâtiment
         $chunkId = floor($lat * 100) . '_' . floor($lng * 100);
-
         $chunk = $chunkRepo->findOrCreate($chunkId);
 
         $building = new Building();
@@ -237,25 +198,61 @@ final class GameApiController extends AbstractController
         $building->setLongitudeBuild($lng);
         $building->setLevel(1);
 
-        $em->persist($building);
+        if ($buildingType->getProductionRate() > 0 && $buildingType->getResourceType() !== null) {
+            $deposit = $depositRepo->findNearestAvailable($lat, $lng);
 
-        $chunk->addBuilding($building);
+            if ($deposit) {
+                if ($deposit->getResourceType()->getId() !== $buildingType->getResourceType()->getId()) {
+                    return $this->json(['error' => 'Ce bâtiment ne peut pas extraire cette ressource.'], 403);
+                }
 
-        if ($buildingType->getName() === 'base') {
-            $user->setLatitudeBase($lat);
-            $user->setLongitudeBase($lng);
-            $em->persist($user);
+                $deposit->setIsClaimed(true);
+                $building->setResourceDeposit($deposit);
+            } else {
+                return $this->json(['error' => 'No deposit found here'], 403);
+            }
         }
 
+
+        $em->persist($building);
+        $chunk->addBuilding($building);
         $chunk->setUpdatedAt(new \DateTimeImmutable());
 
         $em->flush();
 
         // Invalider le cache pour ce chunk
-        $cacheKey = 'chunk_' . str_replace(['{', '}', '(', ')', '/', '\\', '@', ':'], '_', $chunk->getChunkId());
+        $cacheKey = self::CACHE_VERSION . '_chunk_' . str_replace(['{', '}', '(', ')', '/', '\\', '@', ':'], '_', $chunk->getChunkId());
         $gameCache->delete($cacheKey);
 
         return $this->json(['status' => 'ok', 'chunkId' => $chunk->getChunkId()]);
+    }
+
+    // -------------------------
+    // BUILDINGS VISIBLE
+    // -------------------------
+    #[Route('/api/buildings/visible', methods: ['POST'])]
+    public function getBuildingsVisible(
+        Request $request,
+        BuildingRepository $buildingRepo
+    ): JsonResponse {
+        $data = json_decode($request->getContent(), true);
+        $chunkIds = $data['chunks'] ?? [];
+
+        // Récupérer uniquement les bâtiments dans ces chunks
+        $buildings = $buildingRepo->findBy(['chunk' => $chunkIds]);
+
+        $result = [];
+        foreach ($buildings as $building) {
+            $result[] = [
+                'id' => $building->getId(),
+                'lat' => $building->getLatitudeBuild(),
+                'lng' => $building->getLongitudeBuild(),
+                'type' => $building->getBuildingType()->getName(),
+                'level' => $building->getLevel()
+            ];
+        }
+
+        return $this->json($result);
     }
 
     // -------------------------
@@ -294,61 +291,24 @@ final class GameApiController extends AbstractController
     }
 
     #[Route('/api/chunks/bulk', methods: ['POST'])]
-    public function getChunksBulk(
-        Request $request,
-        ChunkRepository $chunkRepo
-    ): JsonResponse {
-
+    public function getChunksBulk(Request $request, ChunkRepository $chunkRepo): JsonResponse {
         $data = json_decode($request->getContent(), true);
-
         $chunkIds = $data['chunks'] ?? [];
-
-        if (!is_array($chunkIds)) {
-            return $this->json([
-                'error' => 'Invalid chunks'
-            ], 400);
-        }
-
-        $chunks = $chunkRepo->findChunksWithRelations($chunkIds);
+        
+        $chunks = $chunkRepo->findBy(['chunkId' => $chunkIds]); // Find simple
 
         $result = [];
-
         foreach ($chunks as $chunk) {
-
             $roads = [];
-
             foreach ($chunk->getRoads() as $road) {
-
                 $roads[] = [
-                    'id' => $road->getId(),
                     'points' => $road->getPoints(),
                     'type' => $road->getType(),
                     'width' => $road->getWidth()
                 ];
             }
-
-            $buildings = [];
-
-            foreach ($chunk->getBuildings() as $building) {
-
-                $buildings[] = [
-                    'id' => $building->getId(),
-                    'lat' => $building->getLatitudeBuild(),
-                    'lng' => $building->getLongitudeBuild(),
-                    'type' => $building->getBuildingType()->getName(),
-                    'level' => $building->getLevel()
-                ];
-            }
-
-            $result[$chunk->getChunkId()] = [
-                'roads' => $roads,
-                'buildings' => $buildings,
-                'updatedAt' => $chunk
-                    ->getUpdatedAt()
-                    ->format('c')
-            ];
+            $result[$chunk->getChunkId()] = ['roads' => $roads];
         }
-
         return $this->json($result);
     }
 
@@ -374,4 +334,44 @@ final class GameApiController extends AbstractController
             'roads_created' => count($roads)
         ]);
     }
+
+    #[Route('/api/deposits/{chunkId}', methods: ['GET'], requirements: ['chunkId' => '-?\d+_-?\d+'])]
+    public function getDeposits(string $chunkId, ResourceDepositRepository $depositRepo, ChunkRepository $chunkRepo): JsonResponse 
+    {
+        // Il faut retrouver le chunk par son ID pour filtrer les dépôts via les routes
+        $chunk = $chunkRepo->findOneBy(['chunkId' => $chunkId]);
+        if (!$chunk) return $this->json([]);
+
+        $deposits = $depositRepo->findBy(['road' => $chunk->getRoads()->toArray()]);
+        
+        return $this->json(array_map(fn($d) => [
+            'id' => $d->getId(),
+            'type' => $d->getResourceType()->getCode(),
+            'richness' => $d->getRichness(),
+            'latitude' => $d->getLatitude(),
+            'longitude' => $d->getLongitude(),
+        ], $deposits));
+    }
+
+    #[Route('/api/deposits/bulk', methods: ['POST'])]
+    public function bulkDeposits(Request $request, ResourceDepositRepository $depositRepo): JsonResponse
+    {
+        $chunks = json_decode($request->getContent(), true)['chunks'] ?? [];
+        $result = [];
+
+        foreach ($chunks as $chunkId) {
+            $deposits = $depositRepo->findByChunkId($chunkId);
+            $result[$chunkId] = array_map(fn($d) => [
+                'id'            => $d->getId(),
+                'resource_type' => $d->getResourceType()->getCode(),
+                'richness'      => $d->getRichness(),
+                'latitude'      => $d->getLatitude(),
+                'longitude'     => $d->getLongitude(),
+                'is_claimed'    => $d->getIsClaimed(),
+            ], $deposits);
+        }
+
+        return new JsonResponse($result);
+    }
 }
+

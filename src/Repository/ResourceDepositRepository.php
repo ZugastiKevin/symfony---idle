@@ -16,28 +16,28 @@ class ResourceDepositRepository extends ServiceEntityRepository
         parent::__construct($registry, ResourceDeposit::class);
     }
 
-    //    /**
-    //     * @return ResourceDeposit[] Returns an array of ResourceDeposit objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('r')
-    //            ->andWhere('r.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('r.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    public function findNearestAvailable(float $lat, float $lng, float $radius = 0.005): ?ResourceDeposit
+    {
+        return $this->createQueryBuilder('r')
+            ->where('r.isClaimed = false')
+            ->andWhere('ABS(r.latitude - :lat) < :radius')
+            ->andWhere('ABS(r.longitude - :lng) < :radius')
+            ->setParameter('lat', $lat)
+            ->setParameter('lng', $lng)
+            ->setParameter('radius', $radius)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
 
-    //    public function findOneBySomeField($value): ?ResourceDeposit
-    //    {
-    //        return $this->createQueryBuilder('r')
-    //            ->andWhere('r.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+    public function findByChunkId(string $chunkId): array
+    {
+        return $this->createQueryBuilder('d')
+            ->join('d.road', 'r')
+            ->join('r.chunk', 'c')
+            ->where('c.chunkId = :chunkId')
+            ->setParameter('chunkId', $chunkId)
+            ->getQuery()
+            ->getResult();
+    }
 }

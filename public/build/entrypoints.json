@@ -3,12 +3,25 @@
     "app": {
       "js": [
         "/build/runtime.js",
-        "/build/vendors-node_modules_fortawesome_fontawesome-free_js_all_js-node_modules_leaflet_dist_leaflet-bd7b76.js",
+        "/build/vendors-node_modules_leaflet_dist_leaflet_css-node_modules_core-js_internals_add-to-unscopabl-b7170d.js",
+        "/build/vendors-node_modules_fortawesome_fontawesome-free_js_all_js-node_modules_fortawesome_fontawes-6d35c4.js",
         "/build/app.js"
       ],
       "css": [
-        "/build/vendors-node_modules_fortawesome_fontawesome-free_js_all_js-node_modules_leaflet_dist_leaflet-bd7b76.css",
+        "/build/vendors-node_modules_leaflet_dist_leaflet_css-node_modules_core-js_internals_add-to-unscopabl-b7170d.css",
+        "/build/vendors-node_modules_fortawesome_fontawesome-free_js_all_js-node_modules_fortawesome_fontawes-6d35c4.css",
         "/build/app.css"
+      ]
+    },
+    "game": {
+      "js": [
+        "/build/runtime.js",
+        "/build/vendors-node_modules_leaflet_dist_leaflet_css-node_modules_core-js_internals_add-to-unscopabl-b7170d.js",
+        "/build/vendors-node_modules_leaflet_dist_leaflet-src_js-node_modules_leaflet_dist_images_marker-icon-0702f3.js",
+        "/build/game.js"
+      ],
+      "css": [
+        "/build/vendors-node_modules_leaflet_dist_leaflet_css-node_modules_core-js_internals_add-to-unscopabl-b7170d.css"
       ]
     }
   }

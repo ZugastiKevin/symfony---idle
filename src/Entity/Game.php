@@ -45,6 +45,11 @@ class Game
         $this->buildings = new ArrayCollection();
     }
 
+    public function __toString(): string
+    {
+        return 'Partie #' . $this->id;
+    }
+
     public function getId(): ?int
     {
         return $this->id;

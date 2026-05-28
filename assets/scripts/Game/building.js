@@ -1,4 +1,4 @@
-import L from 'leaflet';
+import L from '../LeafletWrapper.js';
 import { getMap } from './map.js';
 import { getBuildings } from './api.js';
 
@@ -26,4 +26,15 @@ export function loadBuildings() {
         });
 
     });
+}
+
+/**
+ * Retourne dynamiquement le chemin de l'image.
+ * @param {string} faction - Le code ou nom de la faction (ex: "Empire", "Cendres").
+ * @param {string} building - Le nom du bâtiment (ex: "base", "iron_mine").
+ */
+export function getBuildingImage(faction, building) {
+    const factionSlug = (faction || 'default').toLowerCase();
+
+    return `/assets/images/buildings/${factionSlug}/${building}.png`;
 }

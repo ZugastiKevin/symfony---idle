@@ -18,31 +18,6 @@ class BuildingRepository extends ServiceEntityRepository
         parent::__construct($registry, Building::class);
     }
 
-    //    /**
-    //     * @return Building[] Returns an array of Building objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('b')
-    //            ->andWhere('b.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('b.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
-
-    //    public function findOneBySomeField($value): ?Building
-    //    {
-    //        return $this->createQueryBuilder('b')
-    //            ->andWhere('b.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
-
     /**
      * @param Game $game
      * @return array
@@ -93,4 +68,17 @@ class BuildingRepository extends ServiceEntityRepository
 
         return $rates;
     }
+
+    public function findBaseForUser(User $user): ?Building
+    {
+        return $this->createQueryBuilder('b')
+            ->join('b.buildingType', 'bt')
+            ->where('b.user = :user')
+            ->andWhere('bt.name = :name')
+            ->setParameter('user', $user)
+            ->setParameter('name', 'base')
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
 }
+

@@ -2,99 +2,61 @@
 
 namespace App\Service;
 
-use App\Entity\PlayerResource;
+use App\Entity\PlayerInventory;
 use App\Entity\User;
 use App\Repository\BuildingRepository;
+use App\Repository\ResourceTypeRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
 class ResourceProductionService
 {
-    /**
-     * @var array<string, string>
-     */
-    private const RESOURCE_ALIASES = [
-        'iron' => 'iron',
-        'fer' => 'iron',
-        'stone' => 'stone',
-        'pierre' => 'stone',
-        'water' => 'water',
-        'eau' => 'water',
-        'oil' => 'oil',
-        'petrol' => 'oil',
-        'petrole' => 'oil',
-        'pétrole' => 'oil',
-    ];
-
     public function __construct(
         private readonly BuildingRepository $buildingRepository,
+        private readonly ResourceTypeRepository $resourceTypeRepository,
         private readonly EntityManagerInterface $entityManager
-    ) {
-    }
+    ) {}
 
-    public function updatePlayerResources(User $user, ?\DateTimeImmutable $now = null): PlayerResource
+    public function updatePlayerResources(User $user, ?\DateTimeImmutable $now = null): void
     {
         $now = $now ?? new \DateTimeImmutable();
-        $playerResource = $user->getPlayerResource();
+        
+        $firstInv = $user->getPlayerInventories()->first();
+        $lastUpdate = ($firstInv instanceof PlayerInventory) ? $firstInv->getUpdatedAt() : $now;
 
-        if (!$playerResource) {
-            $playerResource = new PlayerResource();
-            $playerResource->setPlayer($user);
-            $playerResource->setUpdatedAt($now);
-            $user->setPlayerResource($playerResource);
-            $this->entityManager->persist($playerResource);
-
-            return $playerResource;
-        }
-
-        $updatedAt = $playerResource->getUpdatedAt() ?? $now;
-        $elapsedSeconds = $now->getTimestamp() - $updatedAt->getTimestamp();
-
-        if ($elapsedSeconds < 3600) {
-            return $playerResource;
-        }
+        $elapsedSeconds = $now->getTimestamp() - $lastUpdate->getTimestamp();
+        if ($elapsedSeconds < 3600) return;
 
         $elapsedHours = intdiv($elapsedSeconds, 3600);
         $ratesByResource = $this->buildingRepository->getProductionRatesByResourceForUser($user);
 
-        $this->applyProduction($playerResource, $ratesByResource, $elapsedHours);
-        $playerResource->setUpdatedAt($updatedAt->modify(sprintf('+%d hours', $elapsedHours)));
-
-        return $playerResource;
-    }
-
-    /**
-     * @param array<string, float> $ratesByResource
-     */
-    private function applyProduction(PlayerResource $playerResource, array $ratesByResource, int $hours): void
-    {
-        foreach ($ratesByResource as $resourceType => $ratePerHour) {
-            $normalized = $this->normalizeResourceType($resourceType);
-
-            if ($normalized === null) {
-                continue;
+        foreach ($ratesByResource as $resourceCode => $ratePerHour) {
+            $amount = (int) floor($ratePerHour * $elapsedHours);
+            if ($amount > 0) {
+                $this->addResource($user, $resourceCode, $amount, $now);
             }
-
-            $amount = (int) floor($ratePerHour * $hours);
-
-            if ($amount <= 0) {
-                continue;
-            }
-
-            match ($normalized) {
-                'iron' => $playerResource->addIron($amount),
-                'stone' => $playerResource->addStone($amount),
-                'water' => $playerResource->addWater($amount),
-                'oil' => $playerResource->addOil($amount),
-                default => null,
-            };
         }
+        $this->entityManager->flush();
     }
 
-    private function normalizeResourceType(string $resourceType): ?string
+    private function addResource(User $user, string $code, int $amount, \DateTimeImmutable $now): void
     {
-        $type = strtolower(trim($resourceType));
-        $type = str_replace([' ', '-', '_'], '', $type);
+        foreach ($user->getPlayerInventories() as $inventory) {
+            if ($inventory->getResourceType()->getCode() === $code) {
+                $inventory->setQuantity($inventory->getQuantity() + $amount);
+                $inventory->setUpdatedAt($now);
+                return;
+            }
+        }
 
-        return self::RESOURCE_ALIASES[$type] ?? null;
+        // Si l'inventaire n'existe pas encore pour cette ressource, on le crée
+        $resourceType = $this->resourceTypeRepository->findOneBy(['code' => $code]);
+        if ($resourceType) {
+            $newInv = new PlayerInventory();
+            $newInv->setPlayer($user);
+            $newInv->setResourceType($resourceType);
+            $newInv->setQuantity($amount);
+            $newInv->setUpdatedAt($now);
+            $this->entityManager->persist($newInv);
+        }
     }
 }

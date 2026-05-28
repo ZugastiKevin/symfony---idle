@@ -30,9 +30,16 @@ class Faction
     #[ORM\OneToMany(targetEntity: User::class, mappedBy: 'faction')]
     private Collection $users;
 
+    /**
+     * @var Collection<int, FactionBuildingImage>
+     */
+    #[ORM\OneToMany(targetEntity: FactionBuildingImage::class, mappedBy: 'faction', orphanRemoval: true)]
+    private Collection $factionBuildingImages;
+
     public function __construct()
     {
         $this->users = new ArrayCollection();
+        $this->factionBuildingImages = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -99,6 +106,36 @@ class Faction
         if ($this->users->removeElement($user)) {
             if ($user->getFaction() === $this) {
                 $user->setFaction(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, FactionBuildingImage>
+     */
+    public function getFactionBuildingImages(): Collection
+    {
+        return $this->factionBuildingImages;
+    }
+
+    public function addFactionBuildingImage(FactionBuildingImage $factionBuildingImage): static
+    {
+        if (!$this->factionBuildingImages->contains($factionBuildingImage)) {
+            $this->factionBuildingImages->add($factionBuildingImage);
+            $factionBuildingImage->setFaction($this);
+        }
+
+        return $this;
+    }
+
+    public function removeFactionBuildingImage(FactionBuildingImage $factionBuildingImage): static
+    {
+        if ($this->factionBuildingImages->removeElement($factionBuildingImage)) {
+            // set the owning side to null (unless already changed)
+            if ($factionBuildingImage->getFaction() === $this) {
+                $factionBuildingImage->setFaction(null);
             }
         }
 

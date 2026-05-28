@@ -40,12 +40,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 255)]
     private ?string $pseudo = null;
 
-    #[ORM\Column(nullable: true)]
-    private ?float $latitudeBase = null;
-
-    #[ORM\Column(nullable: true)]
-    private ?float $longitudeBase = null;
-
     #[ORM\ManyToOne(inversedBy: 'users')]
     private ?Game $game = null;
 
@@ -58,12 +52,21 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(targetEntity: Building::class, mappedBy: 'user')]
     private Collection $buildings;
 
-    #[ORM\OneToOne(mappedBy: 'player', targetEntity: PlayerResource::class, cascade: ['persist', 'remove'])]
-    private ?PlayerResource $playerResource = null;
+    /**
+     * @var Collection<int, PlayerInventory>
+     */
+    #[ORM\OneToMany(targetEntity: PlayerInventory::class, mappedBy: 'player', cascade: ['persist', 'remove'])]
+    private Collection $playerInventories;
 
     public function __construct()
     {
         $this->buildings = new ArrayCollection();
+        $this->playerInventories = new ArrayCollection();
+    }
+
+    public function __toString(): string
+    {
+        return $this->pseudo ?? $this->email ?? 'Utilisateur #' . $this->id;
     }
 
     public function getId(): ?int
@@ -160,30 +163,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         // @deprecated, to be removed when upgrading to Symfony 8
     }
 
-    public function getLatitudeBase(): ?float
-    {
-        return $this->latitudeBase;
-    }
-
-    public function setLatitudeBase(?float $latitudeBase): static
-    {
-        $this->latitudeBase = $latitudeBase;
-
-        return $this;
-    }
-
-    public function getLongitudeBase(): ?float
-    {
-        return $this->longitudeBase;
-    }
-
-    public function setLongitudeBase(?float $longitudeBase): static
-    {
-        $this->longitudeBase = $longitudeBase;
-
-        return $this;
-    }
-
     public function getGame(): ?Game
     {
         return $this->game;
@@ -238,19 +217,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getPlayerResource(): ?PlayerResource
+    /**
+     * @return Collection<int, PlayerInventory>
+     */
+    public function getPlayerInventories(): Collection
     {
-        return $this->playerResource;
-    }
-
-    public function setPlayerResource(PlayerResource $playerResource): static
-    {
-        $this->playerResource = $playerResource;
-
-        if ($playerResource->getPlayer() !== $this) {
-            $playerResource->setPlayer($this);
-        }
-
-        return $this;
+        return $this->playerInventories;
     }
 }

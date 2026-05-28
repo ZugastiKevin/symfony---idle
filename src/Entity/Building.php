@@ -38,6 +38,9 @@ class Building
     #[ORM\JoinColumn(nullable: false)]
     private ?Chunk $chunk = null;
 
+    #[ORM\OneToOne(targetEntity: ResourceDeposit::class)]
+    private ?ResourceDeposit $resourceDeposit = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -124,6 +127,31 @@ class Building
     {
         $this->chunk = $chunk;
 
+        return $this;
+    }
+
+    public function setCoordinates(string $coords): void
+    {
+        $parts = explode(',', $coords);
+        if (count($parts) === 2) {
+            $this->setLatitudeBuild((float)$parts[0]);
+            $this->setLongitudeBuild((float)$parts[1]);
+        }
+    }
+
+    public function getCoordinates(): string
+    {
+        return $this->latitudeBuild . ',' . $this->longitudeBuild;
+    }
+
+    public function getResourceDeposit(): ?ResourceDeposit
+    {
+        return $this->resourceDeposit;
+    }
+
+    public function setResourceDeposit(?ResourceDeposit $resourceDeposit): static
+    {
+        $this->resourceDeposit = $resourceDeposit;
         return $this;
     }
 }

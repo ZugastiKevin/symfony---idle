@@ -4,6 +4,8 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Form\FactionChoiceType;
+use App\Repository\BuildingRepository;
+use App\Repository\BuildingTypeRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -15,7 +17,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 final class GameController extends AbstractController
 {
     #[Route('/game', name: 'game')]
-    public function index(): Response
+    public function index(BuildingRepository $buildingRepo, BuildingTypeRepository $btRepo): Response
     {
         $user = $this->getUser();
 
@@ -23,7 +25,12 @@ final class GameController extends AbstractController
             return $this->redirectToRoute('game_choose_faction');
         }
 
-        return $this->render('game/index.html.twig');
+        $hasBase = $buildingRepo->findBaseForUser($user) !== null;
+
+        return $this->render('game/index.html.twig', [
+            'buildingTypes' => $btRepo->findAll(),
+            'hasBase' => $hasBase
+        ]);
     }
 
     #[Route('/game/choose-faction', name: 'game_choose_faction')]

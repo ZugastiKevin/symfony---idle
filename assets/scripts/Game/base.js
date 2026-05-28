@@ -1,10 +1,12 @@
-import L from 'leaflet';
+import L from '../LeafletWrapper.js';
 import { flyTo, getMap } from './map.js';
 import { roadsState, getAllLoadedRoads } from './Roads/roadsState.js';
+import { getBuildingImage } from './building.js';
 import { CHUNK_SIZE } from './Config/chunk.js';
 import { safeLoadChunk, loadVisibleRoadChunks } from './Roads/roads.js';
 import { findClosestPointOnRoad, findClosestSegment } from './Roads/roadUtils.js';
 import { showNotification } from './Ui/notification.js';
+import { getAdminCoords } from './Utils/admin_clipboard.js';
 
 // =======================
 // 🧠 STATE
@@ -20,6 +22,16 @@ let previewCircle = null;
 let previewSnapLatLng = null;
 let previewLine = null;
 let highlightedSegment = null;
+
+let currentPlayerFaction = 'default';
+
+
+// =======================
+// SET PLAYER FACTION
+// =======================
+export function setCurrentPlayerFaction(faction) {
+    currentPlayerFaction = (faction || 'default').toLowerCase();
+}
 
 // =======================
 // INIT UI
@@ -144,6 +156,20 @@ export function initBaseUI() {
 }
 
 // =======================
+// PATHFINDING DEBUG FOR ADMIN - CLICK TO GET COORDINATES
+// =======================
+export function enableAdminCoordinatePicker() {
+    const map = getMap();
+    showNotification("Mode Admin activé : cliquez sur la carte", 'info');
+        
+    map.on('click', (e) => {
+        getAdminCoords(e.latlng.lat, e.latlng.lng);
+    });
+}
+
+window.enableAdminCoordinatePicker = enableAdminCoordinatePicker;
+
+// =======================
 // 🧹 CLEAN PREVIEW
 // =======================
 function cleanupPreview() {
@@ -197,68 +223,31 @@ function createBase(lat, lng) {
         radius: 500,
     }).addTo(map);
 
-    fetch('/api/create-base', {
+    const baseTypeId = 1;
+    fetch('/api/build', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lat, lng })
+        body: JSON.stringify({
+            lat,
+            lng,
+            type_id: baseTypeId
+        })
     })
     .then(res => {
-        if (!res.ok) throw new Error("API error");
+        if (!res.ok) return res.json().then(err => { throw new Error(err.error || "API error") });
         return res.json();
     })
     .then(() => {
-        baseCreated = true;
+    baseCreated = true;
     })
     .catch(err => {
         console.error(err);
         removeBase();
-        alert("Erreur création base !");
+        alert("Erreur création base : " + err.message);
     });
 
     map.getContainer().style.cursor = '';
     updateBaseDisplay();
-}
-
-// =======================
-// CREATE BASE ICON
-// =======================
-function createBaseIcon(zoom) {
-
-    if (zoom < 13) return null;
-
-    const size = zoom > 15 ? 50 : 30;
-
-    return L.icon({
-        iconUrl: '/assets/images/building/plan_industry.png',
-
-        iconSize: [size, size],       // taille de l'image
-        iconAnchor: [size / 2, size / 2], // centre de l'image sur la position
-        popupAnchor: [0, -size / 2]   // popup au-dessus
-    });
-}
-
-// =======================
-// UPDATE BASE DISPLAY
-// =======================
-function updateBaseDisplay() {
-
-    const map = getMap();
-
-    if (!basePosition) return;
-
-    const icon = createBaseIcon(map.getZoom());
-
-    if (!icon) {
-        if (baseMarker) map.removeLayer(baseMarker);
-        return;
-    }
-
-    if (!baseMarker) {
-        baseMarker = L.marker(basePosition, { icon }).addTo(map);
-    } else {
-        if (!map.hasLayer(baseMarker)) baseMarker.addTo(map);
-        baseMarker.setIcon(icon);
-    }
 }
 
 // =======================
@@ -279,13 +268,12 @@ function removeBase() {
 
     map.getContainer().style.cursor = '';
 }
-
 // =======================
 // LOAD OTHER BASE
 // =======================
 let otherBases = [];
 
-export function loadOtherBase(lat, lng, pseudo) {
+export function loadOtherBase(lat, lng, pseudo, faction) {
 
     const map = getMap();
 
@@ -296,7 +284,7 @@ export function loadOtherBase(lat, lng, pseudo) {
         color: 'red'
     }).addTo(map);
 
-    const icon = createBaseIcon(map.getZoom());
+    const icon = createBaseIcon(map.getZoom(), faction);
 
     let marker = null;
 
@@ -306,7 +294,7 @@ export function loadOtherBase(lat, lng, pseudo) {
             .bindPopup(`🏕️ Base de ${pseudo}`);
     }
 
-    otherBases.push({ lat, lng, pseudo, marker, circle });
+    otherBases.push({ lat, lng, pseudo, marker, circle, faction });
 }
 
 // =======================
@@ -319,7 +307,7 @@ function updateOtherBases() {
 
     otherBases.forEach(base => {
 
-        const icon = createBaseIcon(zoom);
+        const icon = createBaseIcon(zoom, base.faction);
 
         if (!icon) {
             if (base.marker) map.removeLayer(base.marker);
@@ -356,4 +344,46 @@ export function loadBaseFromServer(lat, lng) {
     }).addTo(map);
 
     updateBaseDisplay();
+}
+
+// =======================
+// UPDATE BASE DISPLAY
+// =======================
+function updateBaseDisplay() {
+
+    const map = getMap();
+
+    if (!basePosition) return;
+
+    const icon = createBaseIcon(map.getZoom(), currentPlayerFaction);
+
+    if (!icon) {
+        if (baseMarker) map.removeLayer(baseMarker);
+        return;
+    }
+
+    if (!baseMarker) {
+        baseMarker = L.marker(basePosition, { icon }).addTo(map);
+    } else {
+        if (!map.hasLayer(baseMarker)) baseMarker.addTo(map);
+        baseMarker.setIcon(icon);
+    }
+}
+
+// =======================
+// CREATE BASE ICON
+// =======================
+function createBaseIcon(zoom, faction) {
+
+    if (zoom < 13) return null;
+
+    const size = zoom > 15 ? 50 : 30;
+
+    return L.icon({
+        iconUrl: getBuildingImage(faction, 'base'),
+
+        iconSize: [size, size],
+        iconAnchor: [size / 2, size / 2],
+        popupAnchor: [0, -size / 2]
+    });
 }

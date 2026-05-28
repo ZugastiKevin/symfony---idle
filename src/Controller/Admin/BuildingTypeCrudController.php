@@ -5,7 +5,8 @@ namespace App\Controller\Admin;
 use App\Entity\BuildingType;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
-use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\CollectionField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IntegerField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
@@ -32,18 +33,32 @@ class BuildingTypeCrudController extends AbstractCrudController
         return [
             IdField::new('id')->onlyOnIndex(),
             TextField::new('name')->setLabel('Nom'),
-            IntegerField::new('base_cost')->setLabel('Coût de base'),
+            textField::new('code')->setLabel('Code')->setHelp('Un code unique utilisé pour identifier le type de bâtiment dans le code.'),
+            CollectionField::new('costs')
+                ->setLabel('Coûts de construction')
+                ->useEntryCrudForm(BuildingCostCrudController::class)
+                ->renderExpanded(false)
+                ->setEntryIsComplex(true)
+                ->allowAdd()
+                ->allowDelete()
+                ->setRequired(false)
+                ->setFormTypeOption('by_reference', false)
+                ->setHelp('Cliquez pour gérer les ressources nécessaires.')
+                ->formatValue(function ($value, $entity) {
+                    $costs = $entity->getCosts();
+                    if ($costs->isEmpty()) {
+                        return 'Aucun coût';
+                    }
+                    
+                    $summary = [];
+                    foreach ($costs as $cost) {
+                        $summary[] = $cost->getCosts() . ' ' . $cost->getResourceType()->getLabel();
+                    }
+                    
+                    return implode(', ', $summary);
+                }),
             IntegerField::new('production_rate')->setLabel('Taux de production'),
-            ChoiceField::new('resourceType')
-                ->setLabel('Type de ressource')
-                ->setChoices([
-                    'Aucune' => null,
-                    'Fer' => 'iron',
-                    'Pierre' => 'stone',
-                    'Eau' => 'water',
-                    'Petrole' => 'oil',
-                ])
-                ->setFormTypeOption('required', false),
+            AssociationField::new('resourceType')->setLabel('Type de ressource'),
             IntegerField::new('max_level')->setLabel('Niveau Max'),
         ];
     }

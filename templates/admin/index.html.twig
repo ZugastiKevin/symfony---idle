@@ -19,6 +19,11 @@
                     <i class="fa fa-arrow-left"></i> Retourner sur le site
                 </a>
             </div>
+            <div class="admin-dashboard-back-btn">
+                <a href="{{ path('game', {'_locale': app.request.locale|default('fr')}) }}">
+                    <i class="fa fa-arrow-left"></i> Retourner sur la partie
+                </a>
+            </div>
         </div>
 
         <div class="admin-dashboard-grid">

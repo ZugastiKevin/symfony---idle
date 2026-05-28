@@ -32,7 +32,7 @@ class FactionCrudController extends AbstractCrudController
             IdField::new('id')->onlyOnIndex(),
             TextField::new('name')->setLabel('Nom'),
             TextField::new('code')->setLabel('Code')->setHelp('Identifiant unique pour la faction'),
-            TextEditorField::new('description')->setLabel('Description')->hideOnIndex(),
+            TextEditorField::new('description')->setLabel('Description'),
         ];
     }
 }

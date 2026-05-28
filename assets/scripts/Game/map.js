@@ -1,5 +1,4 @@
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import L from '../LeafletWrapper.js';
 
 import { debugLog } from './Config/debug.js';
 
@@ -7,7 +6,9 @@ import { gridLayer, initGridLayer } from './Layers/gridLayer.js';
 import { loadVisibleRoadChunks } from './Roads/roads.js';
 import { roadsState } from './Roads/roadsState.js';
 
-import { loadBaseFromServer, loadOtherBase } from './base.js';
+import { loadBaseFromServer, loadOtherBase, setCurrentPlayerFaction } from './base.js';
+
+import { initDepositLayers, depositLayers } from './Map/deposits.js';
 
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -29,14 +30,11 @@ export function initMap(lat, lng) {
         attribution: '&copy; OpenStreetMap'
     }).addTo(mapInstance);
 
-    L.control.layers(null, {
+    const layersControl = L.control.layers(null, {
         "Chunk Grid": gridLayer
     }).addTo(mapInstance);
 
-    L.control.layers(null, {
-        "eau": gridLayer,
-        "fer": gridLayer
-    }).addTo(mapInstance);
+    initDepositLayers(mapInstance, layersControl);
 
     // =====================
     // CENTRAL CHUNK CONTROLLER
@@ -118,25 +116,26 @@ export function loadWorld() {
                     .bindPopup(`${b.type} lvl ${b.level}`);
             });
 
-            if (data.bases) {
+            if (data.players) {
 
                 let hasCentered = false;
 
-                data.bases.forEach(base => {
+                data.players.forEach(player => {
 
-                    if (base.isMe) {
+                    if (player.isMe) {
+                        setCurrentPlayerFaction(player.faction);
 
-                        loadBaseFromServer(base.lat, base.lng);
+                        loadBaseFromServer(player.lat, player.lng);
 
                         if (!hasCentered) {
-                            flyTo(base.lat, base.lng, 16);
+                            flyTo(player.lat, player.lng, 16);
                             hasCentered = true;
                         }
 
                         return;
                     }
 
-                    loadOtherBase(base.lat, base.lng, base.pseudo);
+                    loadOtherBase(player.lat, player.lng, player.pseudo, player.faction);
                 });
             }
         })

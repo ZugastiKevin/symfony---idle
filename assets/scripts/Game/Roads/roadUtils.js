@@ -1,4 +1,4 @@
-import L from 'leaflet';
+import L from '../../LeafletWrapper.js';
 import { getMap } from '../map.js';
 
 /**

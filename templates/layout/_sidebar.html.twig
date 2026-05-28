@@ -1,0 +1,44 @@
+<div id="sideBar">
+    <!-- Vue 1: Menu Principal -->
+    <div id="view-main" class="sidebar-view">
+        {% if is_granted('ROLE_ADMIN') %}
+            <button onclick="window.enableAdminCoordinatePicker()">🔍 Admin</button>
+        {% endif %}
+        
+        <button onclick="switchView('view-build')">🏗️ Construire</button>
+        
+        {% if hasBase %}
+            <button id="baseBtn" data-mode="return">🏠 Retour Base</button>
+        {% endif %}
+        
+        <button id="requestApiRoadsAndChunksBtn" class="btn-primary">📡 Sync Map</button>
+    </div>
+
+    <!-- Vue 2: Liste des bâtiments -->
+    <div id="view-build" class="sidebar-view" style="display: none;">
+        <button class="back-btn" onclick="switchView('view-main')">⬅️ Retour</button>
+        <hr>
+        
+        {% for type in buildingTypes %}
+            {% if type.id == 1 %}
+                {% if hasBase %}
+                    <button class="build-item" disabled>🏠 Base déjà établie</button>
+                {% else %}
+                    <button id="baseBtn" class="btn-primary" data-mode="create" data-type-id="{{ type.id }}">
+                        ✨ Créer mon camp (Base)
+                    </button>
+                {% endif %}
+            {% else %}
+                {% if hasBase %}
+                    <button class="build-item" data-type-id="{{ type.id }}">
+                        {{ type.name }}
+                    </button>
+                {% else %}
+                    <button class="build-item" disabled title="Base requise">
+                        {{ type.name }} (Base requise)
+                    </button>
+                {% endif %}
+            {% endif %}
+        {% endfor %}
+    </div>
+</div>
