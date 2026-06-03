@@ -22,7 +22,7 @@ class BuildingType
     private ?string $code = null;
 
     #[ORM\Column]
-    private ?int $base_cost = null;
+    private int $base_cost = 0;
 
     #[ORM\Column]
     private ?float $production_rate = null;
@@ -84,7 +84,7 @@ class BuildingType
         return $this;
     }
 
-    public function getBaseCost(): ?int
+    public function getBaseCost(): int
     {
         return $this->base_cost;
     }

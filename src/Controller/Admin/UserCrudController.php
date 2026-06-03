@@ -49,6 +49,7 @@ class UserCrudController extends AbstractCrudController
             EmailField::new('email', 'Email')->setFormTypeOption('disabled', true),
             TextField::new('pseudo', 'Pseudo'),
             AssociationField::new('faction', 'Faction'),
+            AssociationField::new('playerInventories', 'Inventaires'),
             ArrayField::new('roles', 'Rôles')->onlyOnIndex(),
             DateTimeField::new('created_at', 'Créé le')->hideOnForm(),
         ];

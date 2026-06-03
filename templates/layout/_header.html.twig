@@ -14,6 +14,22 @@
                             <span>{{ 'siteName'|trans }}</span>
                         </a>
                     </li> #}
+
+                    {# Affichage des ressources du joueur connecté #}
+                    {% if app.user and app.user.playerInventories is not empty %}
+                        <li class="resources-display">
+                            <div class="resources-list">
+                                {% for inventory in app.user.playerInventories %}
+                                    <span class="resource-item" title="{{ inventory.resourceType.label }}">
+                                        <img src="{{ asset('assets/images/resources/' ~ inventory.resourceType.code ~ '.jpg') }}"
+                                             alt="{{ inventory.resourceType.label }}"
+                                             class="resource-icon">
+                                        <span class="resource-qty">{{ inventory.quantity }}</span>
+                                    </span>
+                                {% endfor %}
+                            </div>
+                        </li>
+                    {% endif %}
                 </ul>
             </div>
         </div>

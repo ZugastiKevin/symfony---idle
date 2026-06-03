@@ -1,0 +1,74 @@
+{
+    "app": {
+        "path": "\/assets\/app-8a53354b9549b495de13955771119551.js",
+        "type": "js"
+    },
+    "\/assets\/styles\/app.scss": {
+        "path": "\/assets\/styles\/app-c4d1235d0c33338aadb42d3d2e9c9c9e.scss",
+        "type": "js"
+    },
+    "\/assets\/scripts\/Layout\/dropdown.js": {
+        "path": "\/assets\/scripts\/Layout\/dropdown-2f4a2f5eb51fdf64522831d0fc8ec375.js",
+        "type": "js"
+    },
+    "\/assets\/scripts\/Layout\/switch_layout.js": {
+        "path": "\/assets\/scripts\/Layout\/switch_layout-c8af044b5aebff99f35054ace9bc77f5.js",
+        "type": "js"
+    },
+    "\/assets\/scripts\/Security\/form.js": {
+        "path": "\/assets\/scripts\/Security\/form-57e7c4a054ec75817c2470a21c631f37.js",
+        "type": "js"
+    },
+    "\/assets\/scripts\/Security\/remember_me.js": {
+        "path": "\/assets\/scripts\/Security\/remember_me-03f437acef5735572c37d00e199e35f6.js",
+        "type": "js"
+    },
+    "\/assets\/scripts\/Security\/reset-btn.js": {
+        "path": "\/assets\/scripts\/Security\/reset-btn-be9ab113568fa4c1d7d8d3c82db26772.js",
+        "type": "js"
+    },
+    "\/assets\/scripts\/Game\/faction-game-choice.js": {
+        "path": "\/assets\/scripts\/Game\/faction-game-choice-e15fa703c79e35e9a65db47515159441.js",
+        "type": "js"
+    },
+    "@hotwired\/stimulus": {
+        "path": "\/assets\/vendor\/@hotwired\/stimulus\/stimulus.index-4b8ccd71e6b1c4ddba22853d5a50a26c.js",
+        "type": "js"
+    },
+    "@symfony\/stimulus-bundle": {
+        "path": "\/assets\/@symfony\/stimulus-bundle\/loader-20ecc10cbbb74d097d458e14577bcd99.js",
+        "type": "js"
+    },
+    "\/assets\/@symfony\/stimulus-bundle\/controllers.js": {
+        "path": "\/assets\/@symfony\/stimulus-bundle\/controllers-9d42643c079ab11f27a3a9614f81cc2f.js",
+        "type": "js"
+    },
+    "\/assets\/@symfony\/ux-turbo\/turbo_controller.js": {
+        "path": "\/assets\/@symfony\/ux-turbo\/turbo_controller-6c50a8e6e6ca21c94e8fd8573c988499.js",
+        "type": "js"
+    },
+    "\/assets\/controllers\/hello_controller.js": {
+        "path": "\/assets\/controllers\/hello_controller-87b6385829902356204e988334af9bf5.js",
+        "type": "js"
+    },
+    "@hotwired\/turbo": {
+        "path": "\/assets\/vendor\/@hotwired\/turbo\/turbo.index-a53d794fa85309d61a95703410716017.js",
+        "type": "js"
+    },
+    "@fortawesome\/fontawesome-free": {
+        "path": "\/assets\/vendor\/@fortawesome\/fontawesome-free\/fontawesome-free.index-d2b8739cb951252cd87610d930ce13c2.js",
+        "type": "js"
+    },
+    "@fortawesome\/fontawesome-free\/css\/all.min.css": {
+        "path": "\/assets\/vendor\/@fortawesome\/fontawesome-free\/css\/all.min-7579918e76deb434eb7f01c302f39be2.css",
+        "type": "css"
+    },
+    "leaflet": {
+        "path": "\/assets\/vendor\/leaflet\/leaflet.index-63df962efa2291c98faecac6c65e0647.js",
+        "type": "js"
+    },
+    "leaflet\/dist\/leaflet.css": {
+        "path": "\/assets\/vendor\/leaflet\/dist\/leaflet-78c6c0111cccc5eb4920e77e1c3e5626.css",
+        "type": "css"
+    }
+}

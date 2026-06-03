@@ -88,4 +88,9 @@ class PlayerInventory
 
         return $this;
     }
+
+    public function __toString(): string
+    {
+        return $this->quantity . ' ' . ($this->resourceType?->getLabel() ?? 'inconnu');
+    }
 }

@@ -1,0 +1,48 @@
+@use "../base/typographys";
+
+@mixin regular {
+  font-family: sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+@mixin bold {
+  font-family: sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 700;
+  font-style: normal;
+}
+
+
+$color-primary: rgb(164, 164, 164);
+$color-secondary: rgba(35, 35, 35, 0.19);
+$color-accent: rgb(231, 49, 49);
+
+$color-antique-gold: #B1954F;
+$color-old-antique-gold: #453D27;
+$color-light-antique-gold: #ACA175;
+$color-golden-twilight: #CBA135;
+$color-blue-eidolon: #5FA3B0;
+$color-cetus-rock: #3A312B;
+
+$color-white: #FAF9F2;
+$color-black: #0E0E15;
+
+$color-overlay: rgba(0, 0, 0, 0.5);
+
+
+$color--main: #12161b;        /* fond principal */
+$color--panel: #1c232b;       /* panneaux */
+$color--elevated: #28323d;    /* cartes / menus */
+
+$color--primary: #4fa36c;        /* vert tactique */
+$color--primary-hover: #63c784;
+
+$color--accent: #d9a441;         /* ambre objectif */
+$color--danger: #c94c4c;         /* alertes */
+$color--info: #4d8dbd;           /* eau / infos */
+
+$color--text-main: #e2e8ea;
+$color--text-muted: #92a0a8;
+
+$color--border: #394650;

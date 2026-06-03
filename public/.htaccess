@@ -38,6 +38,11 @@ DirectoryIndex index.php
     RewriteCond %{HTTP:Authorization} .+
     RewriteRule ^ - [E=HTTP_AUTHORIZATION:%0]
 
+    # Fallback pour les icônes de bâtiments par faction
+    # Si l'icône de faction n'existe pas, utiliser l'icône par défaut
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^assets/images/buildings/(.+)\.png$ assets/images/buildings/default/$1.png [L]
+
     # Redirect to URI without front controller to prevent duplicate content
     # (with and without `/index.php`). Only do this redirect on the initial
     # rewrite by Apache and not on subsequent cycles. Otherwise we would get an

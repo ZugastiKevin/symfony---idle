@@ -4,13 +4,13 @@
         {% if is_granted('ROLE_ADMIN') %}
             <button onclick="window.enableAdminCoordinatePicker()">🔍 Admin</button>
         {% endif %}
-        
+
         <button onclick="switchView('view-build')">🏗️ Construire</button>
-        
+
         {% if hasBase %}
             <button id="baseBtn" data-mode="return">🏠 Retour Base</button>
         {% endif %}
-        
+
         <button id="requestApiRoadsAndChunksBtn" class="btn-primary">📡 Sync Map</button>
     </div>
 
@@ -18,11 +18,13 @@
     <div id="view-build" class="sidebar-view" style="display: none;">
         <button class="back-btn" onclick="switchView('view-main')">⬅️ Retour</button>
         <hr>
-        
+
+        <div class="build-instructions">Clique sur la carte pour construire</div>
+
         {% for type in buildingTypes %}
             {% if type.id == 1 %}
                 {% if hasBase %}
-                    <button class="build-item" disabled>🏠 Base déjà établie</button>
+                    
                 {% else %}
                     <button id="baseBtn" class="btn-primary" data-mode="create" data-type-id="{{ type.id }}">
                         ✨ Créer mon camp (Base)
@@ -30,9 +32,7 @@
                 {% endif %}
             {% else %}
                 {% if hasBase %}
-                    <button class="build-item" data-type-id="{{ type.id }}">
-                        {{ type.name }}
-                    </button>
+                    
                 {% else %}
                     <button class="build-item" disabled title="Base requise">
                         {{ type.name }} (Base requise)
@@ -40,5 +40,10 @@
                 {% endif %}
             {% endif %}
         {% endfor %}
+
+        <hr>
+        <div class="build-note">
+            <small>💡 Pour les mines, cliquez sur "Exploiter" dans les gisements</small>
+        </div>
     </div>
 </div>

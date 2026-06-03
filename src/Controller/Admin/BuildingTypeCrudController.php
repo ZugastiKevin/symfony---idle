@@ -34,6 +34,7 @@ class BuildingTypeCrudController extends AbstractCrudController
             IdField::new('id')->onlyOnIndex(),
             TextField::new('name')->setLabel('Nom'),
             textField::new('code')->setLabel('Code')->setHelp('Un code unique utilisé pour identifier le type de bâtiment dans le code.'),
+            IntegerField::new('base_cost')->setLabel('Coût de base')->setRequired(true),
             CollectionField::new('costs')
                 ->setLabel('Coûts de construction')
                 ->useEntryCrudForm(BuildingCostCrudController::class)
@@ -49,12 +50,12 @@ class BuildingTypeCrudController extends AbstractCrudController
                     if ($costs->isEmpty()) {
                         return 'Aucun coût';
                     }
-                    
+
                     $summary = [];
                     foreach ($costs as $cost) {
                         $summary[] = $cost->getCosts() . ' ' . $cost->getResourceType()->getLabel();
                     }
-                    
+
                     return implode(', ', $summary);
                 }),
             IntegerField::new('production_rate')->setLabel('Taux de production'),

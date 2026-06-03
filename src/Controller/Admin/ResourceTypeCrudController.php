@@ -31,6 +31,7 @@ class ResourceTypeCrudController extends AbstractCrudController
             IdField::new('id')->onlyOnIndex(),
             TextField::new('label')->setLabel('Nom'),
             TextField::new('code')->setLabel('Code')->setHelp('Un code unique utilisé pour identifier le type de ressource dans le code.'),
+            TextField::new('color')->setLabel('Couleur')->setHelp('La couleur associée au type de ressource.'),
         ];
     }
 }

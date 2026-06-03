@@ -224,4 +224,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         return $this->playerInventories;
     }
+
+    public function addPlayerInventory(PlayerInventory $inventory): static
+    {
+        if (!$this->playerInventories->contains($inventory)) {
+            $this->playerInventories->add($inventory);
+            $inventory->setPlayer($this);
+        }
+
+        return $this;
+    }
 }

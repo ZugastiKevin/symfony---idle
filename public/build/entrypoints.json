@@ -17,7 +17,7 @@
       "js": [
         "/build/runtime.js",
         "/build/vendors-node_modules_leaflet_dist_leaflet_css-node_modules_core-js_internals_add-to-unscopabl-b7170d.js",
-        "/build/vendors-node_modules_leaflet_dist_leaflet-src_js-node_modules_leaflet_dist_images_marker-icon-0702f3.js",
+        "/build/vendors-node_modules_leaflet_dist_leaflet-src_js-node_modules_leaflet_dist_images_marker-icon-5905d7.js",
         "/build/game.js"
       ],
       "css": [

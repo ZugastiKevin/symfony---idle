@@ -1,0 +1,31 @@
+.resources-display {
+    margin-left: 1rem;
+
+    .resources-list {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .resource-item {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.25rem 0.5rem;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 4px;
+        font-size: 0.85rem;
+
+        .resource-icon {
+            width: 20px;
+            height: 20px;
+            object-fit: contain;
+        }
+
+        .resource-qty {
+            font-weight: bold;
+            color: #fff;
+        }
+    }
+}

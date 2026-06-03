@@ -9,18 +9,36 @@
                 <div class="mix">
                     <div class="headline">
                         <h3 class="text-headline">Choisissez votre faction</h3>
-                        <p class="text-subheadline">Ce choix est demandé une seule fois à votre entrée dans la partie.</p>
+                        <p class="text-subheadline">Choisissez une faction et rejoignez une partie existante.</p>
                     </div>
                 </div>
 
                 {{ form_start(form, { attr: { class: 'all-form' } }) }}
+                    <div class="games-grid">
+                        <h4>Sélectionnez une partie</h4>
+                        {% for game_field in form.game %}
+                            <div class="game-card">
+                                <label class="game-label">
+                                    {{ form_widget(game_field) }}
+                                    <div class="game-content">
+                                        <h4 class="game-name">{{ game_field.vars.label }}</h4>
+                                        <p class="game-description">{{ game_field.vars.attr['data-description'] }}</p>
+                                    </div>
+                                </label>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <hr>
+
                     <div class="factions-grid">
-                        {% for faction_field in form.factions %}
+                        <h4>Sélectionnez votre faction</h4>
+                        {% for faction_field in form.faction %}
                             <div class="faction-card">
                                 <label class="faction-label">
-                                    {{ faction_field }}
+                                    {{ form_widget(faction_field) }}
                                     <div class="faction-content">
-                                        <h4 class="faction-name">{{ faction_field.vars.choice_label(faction_field.vars.data) }}</h4>
+                                        <h4 class="faction-name">{{ faction_field.vars.label }}</h4>
                                         <p class="faction-description">{{ faction_field.vars.attr['data-description'] }}</p>
                                     </div>
                                 </label>

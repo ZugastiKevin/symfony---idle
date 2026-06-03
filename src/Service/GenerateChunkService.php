@@ -6,7 +6,6 @@ use App\Entity\Chunk;
 use App\Entity\ResourceDeposit;
 use App\Entity\Road;
 use App\Repository\ChunkRepository;
-use App\Repository\RoadRepository;
 use App\Repository\ResourceTypeRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
@@ -18,7 +17,6 @@ use Psr\Log\LoggerInterface;
 class GenerateChunkService
 {
     public function __construct(
-        private RoadRepository $roadRepository,
         private ResourceTypeRepository $resourceTypeRepository,
         private ChunkRepository $chunkRepository,
         private EntityManagerInterface $em,
@@ -51,6 +49,15 @@ class GenerateChunkService
 
         if (empty($allTypes)) {
             $this->logger->warning("Aucun type de ressource trouvé en base de données !");
+            return $roads;
+        }
+
+        // Filtrer pour n'inclure que les ressources extractibles (avec couleur définie)
+        $allTypes = array_filter($allTypes, fn($rt) => $rt->getColor() && strlen($rt->getColor()) > 0);
+
+        // Vérifier qu'il reste des types valides après filtrage
+        if (empty($allTypes)) {
+            $this->logger->warning("Aucun type de ressource extractible trouvé (avec couleur définie) !");
             return $roads;
         }
 

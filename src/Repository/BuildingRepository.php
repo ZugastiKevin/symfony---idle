@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\Building;
 use App\Entity\Game;
+use App\Entity\ResourceType;
 use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -29,9 +30,11 @@ class BuildingRepository extends ServiceEntityRepository
 
         foreach ($buildings as $b) {
             $buildingData[] = [
+                'id' => $b->getId(),
                 'lat' => $b->getLatitudeBuild(),
                 'lng' => $b->getLongitudeBuild(),
                 'type' => $b->getBuildingType()->getName(),
+                'code' => $b->getBuildingType()->getCode(),
                 'level' => $b->getLevel(),
             ];
         }
@@ -40,30 +43,31 @@ class BuildingRepository extends ServiceEntityRepository
     }
 
     /**
-     * @return array<string, float>
+     * @return array<string, float> Map du code ressource => taux de production par heure
      */
     public function getProductionRatesByResourceForUser(User $user): array
     {
         $rows = $this->createQueryBuilder('b')
-            ->select('bt.resourceType AS resourceType', 'SUM(COALESCE(b.level, 1) * COALESCE(bt.production_rate, 0)) AS productionRate')
+            ->select('rt.code AS resourceCode', 'SUM(COALESCE(b.level, 1) * COALESCE(bt.production_rate, 0)) AS productionRate')
             ->join('b.buildingType', 'bt')
+            ->join('bt.resourceType', 'rt')
             ->where('b.user = :user')
             ->andWhere('bt.resourceType IS NOT NULL')
             ->setParameter('user', $user)
-            ->groupBy('bt.resourceType')
+            ->groupBy('rt.code')
             ->getQuery()
             ->getArrayResult();
 
         $rates = [];
 
         foreach ($rows as $row) {
-            $resourceType = $row['resourceType'] ?? null;
+            $resourceCode = $row['resourceCode'] ?? null;
 
-            if (!$resourceType) {
+            if (!$resourceCode) {
                 continue;
             }
 
-            $rates[$resourceType] = (float) ($row['productionRate'] ?? 0);
+            $rates[$resourceCode] = (float) ($row['productionRate'] ?? 0);
         }
 
         return $rates;
@@ -79,6 +83,20 @@ class BuildingRepository extends ServiceEntityRepository
             ->setParameter('name', 'base')
             ->getQuery()
             ->getOneOrNullResult();
+    }
+
+    /**
+     * Trouve les types de bâtiments qui produisent une ressource donnée
+     */
+    public function findProductionBuildingsByResource(ResourceType $resourceType): array
+    {
+        return $this->createQueryBuilder('b')
+            ->join('b.buildingType', 'bt')
+            ->where('bt.resourceType = :resourceType')
+            ->andWhere('bt.production_rate > 0')
+            ->setParameter('resourceType', $resourceType)
+            ->getQuery()
+            ->getResult();
     }
 }
 

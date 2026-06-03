@@ -1,0 +1,11 @@
+[
+    "@fortawesome\/fontawesome-free\/css\/all.min.css",
+    "\/assets\/styles\/app.scss",
+    "\/assets\/scripts\/Layout\/dropdown.js",
+    "\/assets\/scripts\/Layout\/switch_layout.js",
+    "\/assets\/scripts\/Security\/form.js",
+    "\/assets\/scripts\/Security\/remember_me.js",
+    "\/assets\/scripts\/Security\/reset-btn.js",
+    "\/assets\/scripts\/Game\/faction-game-choice.js",
+    "leaflet\/dist\/leaflet.css"
+]

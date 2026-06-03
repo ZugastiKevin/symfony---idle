@@ -19,6 +19,9 @@ class ResourceType
     #[ORM\Column(length: 100)]
     private ?string $label = null;
 
+    #[ORM\Column(length: 7)]
+    private ?string $color = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -40,10 +43,21 @@ class ResourceType
     }
 
     public function setLabel(string $label): self
-    { 
+    {
         $this->label = $label; return $this;
     }
-    
+
+    public function getColor(): ?string
+    {
+        return $this->color;
+    }
+
+    public function setColor(string $color): self
+    {
+        $this->color = $color;
+        return $this;
+    }
+
     public function __toString(): string
     { 
         return $this->label ?? '';

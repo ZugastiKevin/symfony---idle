@@ -1,0 +1,25 @@
+@use "sass:color";
+@use "../abstracts/variables" as v;
+
+.legal-page {
+    max-width: 800px;
+    margin: 8rem auto;
+    padding: 2rem;
+    text-align: center;
+}
+
+.margin-navbar {
+    margin-top: 0;
+}
+
+@media screen and (max-width:890px) {
+    .margin-navbar {
+        margin-top: 0;
+    }
+}
+
+@media screen and (max-width:585px) {
+    .margin-navbar {
+        margin-top: 0;
+    }
+}
