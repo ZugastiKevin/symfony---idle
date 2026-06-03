@@ -22,6 +22,9 @@ class ResourceType
     #[ORM\Column(length: 7)]
     private ?string $color = null;
 
+    #[ORM\Column]
+    private int $rarity = 0;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -52,14 +55,25 @@ class ResourceType
         return $this->color;
     }
 
-    public function setColor(string $color): self
+    public function setColor(?string $color): self
     {
         $this->color = $color;
         return $this;
     }
 
     public function __toString(): string
-    { 
+    {
         return $this->label ?? '';
+    }
+
+    public function getRarity(): int
+    {
+        return $this->rarity;
+    }
+
+    public function setRarity(int $rarity): self
+    {
+        $this->rarity = $rarity;
+        return $this;
     }
 }

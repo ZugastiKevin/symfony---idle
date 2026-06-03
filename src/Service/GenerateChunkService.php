@@ -4,6 +4,7 @@ namespace App\Service;
 
 use App\Entity\Chunk;
 use App\Entity\ResourceDeposit;
+use App\Entity\ResourceType;
 use App\Entity\Road;
 use App\Repository\ChunkRepository;
 use App\Repository\ResourceTypeRepository;
@@ -53,7 +54,7 @@ class GenerateChunkService
         }
 
         // Filtrer pour n'inclure que les ressources extractibles (avec couleur définie)
-        $allTypes = array_filter($allTypes, fn($rt) => $rt->getColor() && strlen($rt->getColor()) > 0);
+        $allTypes = array_filter($allTypes, fn($rt) => !empty($rt->getColor()));
 
         // Vérifier qu'il reste des types valides après filtrage
         if (empty($allTypes)) {
@@ -61,33 +62,38 @@ class GenerateChunkService
             return $roads;
         }
 
-        $depositCount = rand(0, 2);
+        // Toujours générer au moins un dépôt si des routes existent
+        $depositCount = !empty($roads) ? rand(1, min(2, count($roads))) : 0;
+        $selectedRoads = [];
 
-        if ($depositCount > 0 && !empty($roads)) {
+        if ($depositCount > 0) {
             $shuffled = $roads;
             shuffle($shuffled);
-            $selectedRoads = array_slice($shuffled, 0, min($depositCount, count($shuffled)));
+            $selectedRoads = array_slice($shuffled, 0, $depositCount);
 
             foreach ($selectedRoads as $road) {
-                $randomType = $allTypes[array_rand($allTypes)];
-                    
+                // Sélectionner une ressource selon sa rareté
+                // 0 = Commun (80%), 1 = Rare (15%), 2 = Très rare (5%)
+                $randomType = $this->selectResourceByRarity($allTypes);
+
                 $deposit = new ResourceDeposit($randomType, (float)rand(8, 20) / 10);
                 $deposit->setRoad($road);
-                    
+
                 $points = $road->getPoints();
                 if (!empty($points)) {
                     $deposit->setLatitude((float)$points[0][0]);
                     $deposit->setLongitude((float)$points[0][1]);
                 }
-                    
+
                 $this->em->persist($deposit);
                 $this->logger->info("Dépôt [{$randomType->getCode()}] généré sur la route {$road->getId()}.");
             }
         }
 
         $this->em->flush();
-            
-        $this->logger->info("Génération terminée pour le chunk {$chunkId} : " . count($roads) . " routes, {$depositCount} dépôt(s).");
+
+        $actualDepositCount = count($selectedRoads);
+        $this->logger->info("Génération terminée pour le chunk {$chunkId} : " . count($roads) . " routes, {$actualDepositCount} dépôt(s).");
         return $roads;
     }
 
@@ -169,5 +175,39 @@ class GenerateChunkService
         $this->logger->info(count($roads) . " routes générées pour le chunk " . $chunk->getChunkId());
 
         return $roads;
+    }
+
+    /**
+     * Sélectionne une ressource selon sa rareté.
+     * 0 = Commun (80%), 1 = Rare (15%), 2 = Très rare (5%)
+     */
+    private function selectResourceByRarity(array $types): ResourceType
+    {
+        $roll = rand(1, 100);
+
+        if ($roll <= 10) {
+            // Très rare (10%)
+            $rareTypes = array_filter($types, fn($rt) => $rt->getRarity() >= 2);
+            if (!empty($rareTypes)) {
+                return $rareTypes[array_rand($rareTypes)];
+            }
+        }
+
+        if ($roll <= 25) {
+            // Rare (20%)
+            $rareTypes = array_filter($types, fn($rt) => $rt->getRarity() >= 1);
+            if (!empty($rareTypes)) {
+                return $rareTypes[array_rand($rareTypes)];
+            }
+        }
+
+        // Commun (70%)
+        $commonTypes = array_filter($types, fn($rt) => $rt->getRarity() === 0);
+        if (!empty($commonTypes)) {
+            return $commonTypes[array_rand($commonTypes)];
+        }
+
+        // Fallback : retourne n'importe quel type disponible
+        return $types[array_rand($types)];
     }
 }

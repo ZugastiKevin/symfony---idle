@@ -35,7 +35,7 @@ class DashboardController extends AbstractDashboardController
     public function configureMenuItems(): iterable
     {
         yield MenuItem::linkToDashboard('Dashboard', 'fa fa-home');
-        yield MenuItem::linkToRoute('Aller au Jeu', 'fas fa-gamepad', 'game');
+        yield MenuItem::linkToRoute('Aller au Jeu en admin', 'fas fa-gamepad', 'game');
 
         yield MenuItem::section('Gestion Utilisateurs');
         yield MenuItem::linkTo(GameCrudController::class, 'Gestion des session de jeux ', 'fas fa-game')->setAction(GameCrudController::INDEX);
@@ -46,7 +46,7 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::section('Gestion Jeu');
         yield MenuItem::linkTo(FactionCrudController::class, 'Gestion des factions', 'fas fa-shield')->setAction(FactionCrudController::INDEX);
         yield MenuItem::linkTo(BuildingTypeCrudController::class, 'Gestion des types de bâtiments', 'fas fa-layer-group')->setAction(BuildingTypeCrudController::INDEX);
-        yield MenuItem::linkTo(FactionBuildingImageCrudController::class, 'Gestion des images', 'fas fa-image')->setAction(FactionBuildingImageCrudController::INDEX);
         yield MenuItem::linkTo(ResourceTypeCrudController::class, 'Gestion des types de ressources', 'fas fa-gem')->setAction(ResourceTypeCrudController::INDEX);
+        yield MenuItem::linkTo(FactionBuildingImageCrudController::class, 'Gestion des images', 'fas fa-image')->setAction(FactionBuildingImageCrudController::INDEX);
     }
 }

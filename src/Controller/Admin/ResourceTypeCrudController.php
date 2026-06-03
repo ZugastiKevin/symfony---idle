@@ -6,6 +6,7 @@ use App\Entity\ResourceType;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\IntegerField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 
 class ResourceTypeCrudController extends AbstractCrudController
@@ -31,7 +32,8 @@ class ResourceTypeCrudController extends AbstractCrudController
             IdField::new('id')->onlyOnIndex(),
             TextField::new('label')->setLabel('Nom'),
             TextField::new('code')->setLabel('Code')->setHelp('Un code unique utilisé pour identifier le type de ressource dans le code.'),
-            TextField::new('color')->setLabel('Couleur')->setHelp('La couleur associée au type de ressource.'),
+            TextField::new('color')->setLabel('Couleur')->setHelp('La couleur associée au type de ressource (optionnel).')->setRequired(false),
+            IntegerField::new('rarity')->setLabel('Rareté')->setHelp('0=Comune, 1=Rare, 2=Treš rare. Plus la valeur est élevée, plus le dépôt est rare.')->setRequired(true),
         ];
     }
 }
