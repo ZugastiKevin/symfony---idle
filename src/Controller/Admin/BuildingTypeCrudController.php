@@ -34,7 +34,6 @@ class BuildingTypeCrudController extends AbstractCrudController
             IdField::new('id')->onlyOnIndex(),
             TextField::new('name')->setLabel('Nom'),
             textField::new('code')->setLabel('Code')->setHelp('Un code unique utilisé pour identifier le type de bâtiment dans le code.'),
-            IntegerField::new('base_cost')->setLabel('Coût de base')->setRequired(true),
             CollectionField::new('costs')
                 ->setLabel('Coûts de construction')
                 ->useEntryCrudForm(BuildingCostCrudController::class)

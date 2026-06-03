@@ -62,9 +62,9 @@ function getResourceColor(type) {
 async function findBuildingTypeForResource(resourceType) {
     const buildingTypes = await loadBuildingTypes();
 
-    // Chercher un bâtiment qui produit cette ressource
+    // Chercher un bâtiment qui produit cette ressource (production_rate > 0)
     const buildingType = buildingTypes.find(bt => {
-        return (bt.resource_type === resourceType || bt.resourceType?.code === resourceType) && bt.base_cost > 0;
+        return (bt.resource_type === resourceType || bt.resourceType?.code === resourceType) && bt.production_rate > 0;
     });
 
     return buildingType?.id || null;

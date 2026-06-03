@@ -367,7 +367,7 @@ final class GameApiController extends AbstractController
             'id' => $bt->getId(),
             'name' => $bt->getName(),
             'code' => $bt->getCode(),
-            'base_cost' => $bt->getBaseCost(),
+            'base_costs' => $this->buildingService->getBuildCosts($bt, 1),
             'production_rate' => $bt->getProductionRate(),
             'max_level' => $bt->getMaxLevel(),
             'resource_type' => $bt->getResourceType()?->getCode(),

@@ -22,9 +22,6 @@ class BuildingType
     private ?string $code = null;
 
     #[ORM\Column]
-    private int $base_cost = 0;
-
-    #[ORM\Column]
     private ?float $production_rate = null;
 
     #[ORM\ManyToOne(targetEntity: ResourceType::class)]
@@ -80,18 +77,6 @@ class BuildingType
     public function setCode(string $code): static
     {
         $this->code = $code;
-
-        return $this;
-    }
-
-    public function getBaseCost(): int
-    {
-        return $this->base_cost;
-    }
-
-    public function setBaseCost(int $base_cost): static
-    {
-        $this->base_cost = $base_cost;
 
         return $this;
     }
