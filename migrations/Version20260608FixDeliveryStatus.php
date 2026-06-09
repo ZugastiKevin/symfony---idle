@@ -25,10 +25,10 @@ final class Version20260608FixDeliveryStatus extends AbstractMigration
 
     public function down(Schema $schema): void
     {
-        // Revert (optionnel)
-        $this->addSql("UPDATE resource_delivery SET status = 'delivered' WHERE status = 'delivered'");
-        $this->addSql("UPDATE resource_delivery SET status = 'in_transit' WHERE status = 'in_transit'");
-        $this->addSql("UPDATE resource_delivery SET status = 'waiting' WHERE status = 'waiting'");
-        $this->addSql("UPDATE resource_delivery SET status = 'pending' WHERE status = 'pending'");
+        // Revert: convertir les strings en integers
+        $this->addSql("UPDATE resource_delivery SET status = 0 WHERE status = 'waiting'");
+        $this->addSql("UPDATE resource_delivery SET status = 1 WHERE status = 'pending'");
+        $this->addSql("UPDATE resource_delivery SET status = 2 WHERE status = 'in_transit'");
+        $this->addSql("UPDATE resource_delivery SET status = 3 WHERE status = 'delivered'");
     }
 }

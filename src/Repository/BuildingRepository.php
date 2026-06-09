@@ -20,6 +20,7 @@ class BuildingRepository extends ServiceEntityRepository
     }
 
     /**
+     * Récupère les données des bâtiments pour une partie.
      * @param Game $game
      * @return array
      */
@@ -34,7 +35,6 @@ class BuildingRepository extends ServiceEntityRepository
             $productionRate = $buildingType->getProductionRate() ?? 0;
             $resourceType = $buildingType->getResourceType()?->getLabel();
 
-            // Calculer le taux de production avec le niveau (et futurs modificateurs)
             $production = $productionRate * $level;
 
             $buildingData[] = [

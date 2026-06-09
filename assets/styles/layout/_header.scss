@@ -130,20 +130,33 @@
                 .resources-display {
                     display: flex;
                     gap: 0.5rem;
+                    margin-left: 1rem;
 
-                    .resource-item {
+                    .resources-list {
                         display: flex;
+                        gap: 0.5rem;
                         align-items: center;
-                        gap: 0.2rem;
+                        flex-wrap: wrap;
 
-                        .resource-icon {
-                            width: 16px;
-                            height: 16px;
-                        }
+                        .resource-item {
+                            display: flex;
+                            align-items: center;
+                            gap: 0.25rem;
+                            padding: 0.25rem 0.5rem;
+                            background: rgba(255, 255, 255, 0.1);
+                            border-radius: 4px;
+                            font-size: 0.85rem;
 
-                        .resource-amount {
-                            font-size: 0.9rem;
-                            color: v.$color-white;
+                            .resource-icon {
+                                width: 30px;
+                                height: 30px;
+                                object-fit: contain;
+                            }
+
+                            .resource-qty {
+                                font-weight: bold;
+                                color: v.$color-white;
+                            }
                         }
                     }
                 }

@@ -21,7 +21,7 @@
                             <div class="resources-list">
                                 {% for inventory in app.user.playerInventories %}
                                     <span class="resource-item" title="{{ inventory.resourceType.label }}">
-                                        <img src="{{ asset('assets/images/resources/' ~ inventory.resourceType.code ~ '.jpg') }}"
+                                        <img src="{{ asset('assets/images/resources/' ~ inventory.resourceType.code ~ '.png') }}"
                                              alt="{{ inventory.resourceType.label }}"
                                              class="resource-icon">
                                         <span class="resource-qty">{{ inventory.quantity }}</span>

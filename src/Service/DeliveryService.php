@@ -6,12 +6,14 @@ use App\Entity\Building;
 use App\Entity\ResourceDelivery;
 use App\Repository\ResourceDeliveryRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class DeliveryService
 {
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
-        private readonly ResourceDeliveryRepository $deliveryRepository
+        private readonly ResourceDeliveryRepository $deliveryRepository,
+        private readonly HttpClientInterface $httpClient,
     ) {}
 
     /**
@@ -79,13 +81,23 @@ class DeliveryService
             $target->getLongitudeBuild()
         );
 
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        $response = curl_exec($ch);
-        curl_close($ch);
+        try {
+            $response = $this->httpClient->request('GET', $url, [
+                'timeout' => 5,
+            ]);
 
-        if (!$response) {
+            $data = $response->toArray();
+
+            $coords = [];
+            foreach ($data['routes'][0]['geometry']['coordinates'] as $point) {
+                $coords[] = ['lat' => $point[1], 'lng' => $point[0]];
+            }
+
+            return [
+                'duration' => (int) $data['routes'][0]['duration'],
+                'coordinates' => $coords
+            ];
+        } catch (\Exception $e) {
             // Fallback: ligne droite
             return [
                 'duration' => 300,
@@ -95,17 +107,6 @@ class DeliveryService
                 ]
             ];
         }
-
-        $data = json_decode($response, true);
-        $coords = [];
-        foreach ($data['routes'][0]['geometry']['coordinates'] as $point) {
-            $coords[] = ['lat' => $point[1], 'lng' => $point[0]];
-        }
-
-        return [
-            'duration' => (int) $data['routes'][0]['duration'],
-            'coordinates' => $coords
-        ];
     }
 
     /**

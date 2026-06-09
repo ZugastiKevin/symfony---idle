@@ -12,6 +12,7 @@ use App\Repository\ChunkRepository;
 use App\Repository\ResourceDeliveryRepository;
 use App\Repository\ResourceDepositRepository;
 use App\Repository\ResourceTypeRepository;
+use App\Service\BuildingManager;
 use App\Service\CoordinateService;
 use App\Service\EnemyBaseService;
 use App\Service\GenerateChunkService;
@@ -27,6 +28,12 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Contracts\Cache\CacheInterface;
 
+/**
+ * Controller API principal pour le jeu.
+ *
+ * @see BuildingManager Pour la gestion de la construction/amélioration des bâtiments
+ * @see BuildingDataService Pour la transformation des données de building
+ */
 #[IsGranted('ROLE_USER')]
 final class GameApiController extends AbstractController
 {
@@ -37,6 +44,7 @@ final class GameApiController extends AbstractController
         private readonly \App\Service\BuildingService $buildingService,
         private readonly CoordinateService $coordinateService,
         private readonly ResourceTransportService $transportService,
+        private readonly BuildingManager $buildingManager,
     ) {}
 
     // -------------------------
