@@ -24,6 +24,5 @@ export function upgradeBuilding(buildingId) {
 }
 
 export function getUpgradeInfo(buildingId) {
-    return fetch(`/api/building/${buildingId}/upgrade-info`)
-        .then(res => res.json());
+    return fetch(`/api/building/${buildingId}/upgrade-info`);
 }

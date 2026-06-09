@@ -9,16 +9,20 @@ use App\Entity\User;
 use App\Repository\BuildingRepository;
 use App\Repository\BuildingTypeRepository;
 use App\Repository\ChunkRepository;
+use App\Repository\ResourceDeliveryRepository;
 use App\Repository\ResourceDepositRepository;
 use App\Repository\ResourceTypeRepository;
 use App\Service\CoordinateService;
 use App\Service\EnemyBaseService;
 use App\Service\GenerateChunkService;
+use App\Service\ResourceTransportService;
 use App\Service\RoadService;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Mercure\Authorization;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Contracts\Cache\CacheInterface;
@@ -32,6 +36,7 @@ final class GameApiController extends AbstractController
         private readonly \App\Service\ResourceProductionService $resourceProductionService,
         private readonly \App\Service\BuildingService $buildingService,
         private readonly CoordinateService $coordinateService,
+        private readonly ResourceTransportService $transportService,
     ) {}
 
     // -------------------------
@@ -39,6 +44,8 @@ final class GameApiController extends AbstractController
     // -------------------------
     #[Route('/api/world-state', name: 'api_world_state', methods: ['GET'])]
     public function worldState(
+        Authorization $mercureAuth,
+        Request $request,
         BuildingRepository $buildingRepo,
         EntityManagerInterface $em
     ): JsonResponse {
@@ -57,21 +64,40 @@ final class GameApiController extends AbstractController
         $this->resourceProductionService->updatePlayerResources($user);
         $em->flush();
 
-        $buildingData = $buildingRepo->getBuildingsDataForGame($game);
-
+        // Créer une map des factions des joueurs
+        $playerFactions = [];
         $dataPlayers = [];
 
         foreach ($game->getUsers() as $player) {
+            $playerFactions[$player->getId()] = strtolower($player->getFaction()?->getCode() ?? 'default');
+
             $baseBuilding = $buildingRepo->findBaseForUser($player);
 
-            if ($baseBuilding) {
+            // Toujours inclure le joueur (même sans base)
+            if ($player->getId() === $user->getId() || $baseBuilding) {
                 $dataPlayers[] = [
-                    'lat' => $baseBuilding->getLatitudeBuild(),
-                    'lng' => $baseBuilding->getLongitudeBuild(),
-                    'faction' => strtolower($player->getFaction()?->getCode() ?? 'default'),
+                    'lat' => $baseBuilding?->getLatitudeBuild(),
+                    'lng' => $baseBuilding?->getLongitudeBuild(),
+                    'faction' => $playerFactions[$player->getId()],
                     'pseudo' => $player->getPseudo(),
                     'isMe' => $player->getId() === $user->getId(),
                 ];
+            }
+        }
+
+        $buildingData = $buildingRepo->getBuildingsDataForGame($game);
+
+        // Ajouter la faction à chaque bâtiment
+        foreach ($buildingData as &$building) {
+            $building['faction'] = $playerFactions[$building['ownerId']] ?? 'default';
+        }
+
+        // Ajouter l'ID du joueur actif dans la réponse
+        $currentPlayerId = null;
+        foreach ($dataPlayers as $player) {
+            if ($player['isMe']) {
+                $currentPlayerId = $user->getId();
+                break;
             }
         }
 
@@ -81,18 +107,28 @@ final class GameApiController extends AbstractController
         }
 
         $updatedAt = null;
-        $firstInventory = $user->getPlayerInventories()->first();
-
-        if ($firstInventory instanceof \App\Entity\PlayerInventory) {
-            $updatedAt = $firstInventory->getUpdatedAt();
+        $inventories = $user->getPlayerInventories();
+        if ($inventories && count($inventories) > 0) {
+            $firstInventory = $inventories->first();
+            if ($firstInventory instanceof \App\Entity\PlayerInventory) {
+                $updatedAt = $firstInventory->getUpdatedAt();
+            }
         }
 
-        return $this->json([
+        $response = $this->json([
             'buildings' => $buildingData,
             'players' => $dataPlayers,
             'resources' => $resources,
             'updatedAt' => $updatedAt?->format('c'),
+            'currentPlayerId' => $currentPlayerId,
         ]);
+
+        // Génère un cookie JWT Mercure pour ce joueur (topics autorisés)
+        $mercureAuth->setCookie($request, $response, [
+            "game/delivery/{$user->getId()}"
+        ]);
+
+        return $response;
     }
 
     // -------------------------
@@ -134,7 +170,7 @@ final class GameApiController extends AbstractController
         ChunkRepository $chunkRepo,
         CacheInterface $gameCache,
         ResourceDepositRepository $depositRepo,
-        CoordinateService $coordinateService
+        CoordinateService $coordinateService,
     ): JsonResponse {
 
         $user = $this->getUser();
@@ -242,6 +278,14 @@ final class GameApiController extends AbstractController
         // Invalider le cache pour ce chunk
         $cacheKey = self::CACHE_VERSION . '_chunk_' . str_replace(['{', '}', '(', ')', '/', '\\', '@', ':'], '_', $chunk->getChunkId());
         $gameCache->delete($cacheKey);
+
+        // Planifier les livraisons si c'est un bâtiment producteur
+        if ($buildingType->getProductionRate() > 0 && $buildingType->getResourceType() !== null) {
+            $base = $buildingRepo->findBaseForUser($user);
+            if ($base) {
+                $this->transportService->createDeliveryForBuilding($building, $base);
+            }
+        }
 
         return $this->json(['status' => 'ok', 'chunkId' => $chunk->getChunkId()]);
     }
@@ -374,25 +418,31 @@ final class GameApiController extends AbstractController
         ], $types));
     }
 
+    
+
     #[Route('/api/deposits/bulk', methods: ['POST'])]
     public function bulkDeposits(Request $request, ResourceDepositRepository $depositRepo): JsonResponse
     {
-        $chunks = json_decode($request->getContent(), true)['chunks'] ?? [];
-        $result = [];
+        try {
+            $chunks = json_decode($request->getContent(), true)['chunks'] ?? [];
+            $result = [];
 
-        foreach ($chunks as $chunkId) {
-            $deposits = $depositRepo->findByChunkId($chunkId);
-            $result[$chunkId] = array_map(fn($d) => [
-                'id'            => $d->getId(),
-                'resource_type' => $d->getResourceType()->getCode(),
-                'richness'      => $d->getRichness(),
-                'latitude'      => $d->getLatitude(),
-                'longitude'     => $d->getLongitude(),
-                'is_claimed'    => $d->getIsClaimed(),
-            ], $deposits);
+            foreach ($chunks as $chunkId) {
+                $deposits = $depositRepo->findByChunkId($chunkId);
+                $result[$chunkId] = array_map(fn($d) => [
+                    'id'            => $d->getId(),
+                    'resource_type' => $d->getResourceType()?->getCode() ?? 'unknown',
+                    'richness'      => $d->getRichness(),
+                    'latitude'      => $d->getLatitude(),
+                    'longitude'     => $d->getLongitude(),
+                    'is_claimed'    => $d->getIsClaimed(),
+                ], $deposits);
+            }
+
+            return new JsonResponse($result);
+        } catch (\Exception $e) {
+            return $this->json(['error' => $e->getMessage()], 500);
         }
-
-        return new JsonResponse($result);
     }
 
     // -------------------------
@@ -404,6 +454,10 @@ final class GameApiController extends AbstractController
         $user = $this->getUser();
         if (!$user instanceof User || $building->getUser()->getId() !== $user->getId()) {
             return $this->json(['error' => 'Unauthorized'], 403);
+        }
+
+        if (!$this->buildingService->canUpgrade($building)) {
+            return $this->json(['error' => 'Not enough resources'], 403);
         }
 
         if (!$this->buildingService->upgrade($building)) {
@@ -420,11 +474,53 @@ final class GameApiController extends AbstractController
     public function getUpgradeInfo(Building $building): JsonResponse
     {
         $user = $this->getUser();
-        if (!$user instanceof User || $building->getUser()->getId() !== $user->getId()) {
+        if (!$user instanceof User) {
+            return $this->json(['error' => 'Not logged'], 401);
+        }
+
+        // Seul le propriétaire peut voir les infos d'amélioration
+        if ($building->getUser()->getId() !== $user->getId()) {
             return $this->json(['error' => 'Unauthorized'], 403);
         }
 
         return $this->json($this->buildingService->getUpgradeInfo($building));
+    }
+
+    #[Route('/api/buildings/{id}/popup-content', methods: ['GET'])]
+    public function getBuildingPopupContent(Building $building, ResourceDeliveryRepository $deliveryRepo, BuildingRepository $buildingRepo): Response
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return new Response('Non autorisé', 401, ['Content-Type' => 'text/plain']);
+        }
+
+        if ($building->getUser()->getId() !== $user->getId()) {
+            return new Response('Non autorisé', 403, ['Content-Type' => 'text/plain']);
+        }
+
+        $buildingType = $building->getBuildingType();
+        $level = $building->getLevel() ?? 1;
+        $maxLevel = $buildingType->getMaxLevel() ?? 1;
+        $production = $buildingType->getProductionRate() * $level;
+        $resourceType = $buildingType->getResourceType()?->getCode();
+
+        $upgradeInfo = $this->buildingService->getUpgradeInfo($building);
+        $timeRemaining = $deliveryRepo->getTimeUntilNextDeparture($building->getId());
+
+        $html = $this->render('game/_building_popup_content.html.twig', [
+            'building' => $building,
+            'buildingType' => $buildingType,
+            'level' => $level,
+            'maxLevel' => $maxLevel,
+            'production' => $production,
+            'resourceType' => $resourceType,
+            'needed' => $upgradeInfo['needed'] ?? [],
+            'available' => $upgradeInfo['available'] ?? [],
+            'canUpgrade' => $upgradeInfo['canUpgrade'] ?? false,
+            'timeRemaining' => $timeRemaining,
+        ])->getContent();
+
+        return new Response($html);
     }
 
     // -------------------------
@@ -566,7 +662,7 @@ final class GameApiController extends AbstractController
         BuildingTypeRepository $buildingTypeRepo,
         ResourceDepositRepository $depositRepo,
         CacheInterface $gameCache,
-        CoordinateService $coordinateService
+        CoordinateService $coordinateService,
     ): JsonResponse {
         try {
             // Trouver le dépôt
@@ -614,50 +710,58 @@ final class GameApiController extends AbstractController
                 return $this->json(['error' => 'Too far from base'], 403);
             }
 
-        // Consommer les ressources
-        $this->buildingService->consumeResources($user, $buildingType, 1);
+            // Consommer les ressources
+            $this->buildingService->consumeResources($user, $buildingType, 1);
 
-        // Créer le bâtiment sur les coordonnées du dépôt
-        $lat = $deposit->getLatitude();
-        $lng = $deposit->getLongitude();
+            // Créer le bâtiment sur les coordonnées du dépôt
+            $lat = $deposit->getLatitude();
+            $lng = $deposit->getLongitude();
 
-        // Récupérer le chunk depuis la route du dépôt
-        $chunk = $road->getChunk();
-        if (!$chunk) {
-            return $this->json(['error' => 'Deposit chunk not found'], 400);
-        }
+            // Récupérer le chunk depuis la route du dépôt
+            $chunk = $road->getChunk();
+            if (!$chunk) {
+                return $this->json(['error' => 'Deposit chunk not found'], 400);
+            }
 
-        $building = new Building();
-        $building->setUser($user);
-        $building->setGame($game);
-        $building->setChunk($chunk);
-        $building->setBuildingType($buildingType);
-        $building->setLatitudeBuild($lat);
-        $building->setLongitudeBuild($lng);
-        $building->setLevel(1);
-        $building->setResourceDeposit($deposit);
+            $building = new Building();
+            $building->setUser($user);
+            $building->setGame($game);
+            $building->setChunk($chunk);
+            $building->setBuildingType($buildingType);
+            $building->setLatitudeBuild($lat);
+            $building->setLongitudeBuild($lng);
+            $building->setLevel(1);
+            $building->setResourceDeposit($deposit);
 
-        // Marquer le dépôt comme exploité
-        $deposit->setIsClaimed(true);
+            // Marquer le dépôt comme exploité
+            $deposit->setIsClaimed(true);
 
-        $em->persist($building);
-        $chunk->addBuilding($building);
-        $chunk->setUpdatedAt(new \DateTimeImmutable());
+            $em->persist($building);
+            $chunk->addBuilding($building);
+            $chunk->setUpdatedAt(new \DateTimeImmutable());
 
-        $em->flush();
+            $em->flush();
+
+            // Invalider le cache
+            $cacheKey = self::CACHE_VERSION . '_chunk_' . str_replace(['{', '}', '(', ')', '/', '\\', '@', ':'], '_', $chunk->getChunkId());
+            $gameCache->delete($cacheKey);
+
+            // Planifier les livraisons si c'est un bâtiment producteur
+            if ($buildingType->getProductionRate() > 0 && $buildingType->getResourceType() !== null) {
+                $base = $buildingRepo->findBaseForUser($user);
+                if ($base) {
+                    $this->transportService->createDeliveryForBuilding($building, $base);
+                }
+            }
+
+            return $this->json([
+                'status' => 'ok',
+                'buildingId' => $building->getId(),
+                'chunkId' => $chunk->getChunkId(),
+            ]);
         } catch (\Exception $e) {
             return $this->json(['error' => 'Server error: ' . $e->getMessage()], 500);
         }
-
-        // Invalider le cache
-        $cacheKey = self::CACHE_VERSION . '_chunk_' . str_replace(['{', '}', '(', ')', '/', '\\', '@', ':'], '_', $chunk->getChunkId());
-        $gameCache->delete($cacheKey);
-
-        return $this->json([
-            'status' => 'ok',
-            'buildingId' => $building->getId(),
-            'chunkId' => $chunk->getChunkId(),
-        ]);
     }
 
     // -------------------------

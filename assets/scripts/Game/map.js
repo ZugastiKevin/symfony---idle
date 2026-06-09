@@ -7,7 +7,7 @@ import { loadVisibleRoadChunks } from './Roads/roads.js';
 import { roadsState } from './Roads/roadsState.js';
 
 import { loadBaseFromServer, loadOtherBase, setCurrentPlayerFaction } from './base.js';
-import { loadBuildingsFromData } from './building.js';
+import { loadBuildingsFromData, setCurrentPlayerId } from './building.js';
 
 import { initDepositLayers, depositLayers } from './Map/deposits.js';
 
@@ -106,12 +106,19 @@ export function flyTo(lat, lng, zoom = 13) {
 export function loadWorld() {
 
     fetch('/api/world-state')
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) {
+                throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+            }
+            return res.json();
+        })
         .then(data => {
-            // Charger les bâtiments via building.js
-            loadBuildingsFromData(data.buildings);
+            // Vérifier si la réponse est valide
+            if (!data || typeof data !== 'object') {
+                throw new Error('Invalid response format');
+            }
 
-            // Charger les bases via base.js
+            // Charger les bases via base.js D'ABORD pour connaître la faction du joueur
             if (data.players) {
                 let hasCentered = false;
 
@@ -132,9 +139,18 @@ export function loadWorld() {
                     loadOtherBase(player.lat, player.lng, player.pseudo, player.faction);
                 });
             }
+
+            // Définir l'ID du joueur actif
+            if (data.currentPlayerId) {
+                setCurrentPlayerId(data.currentPlayerId);
+            }
+
+            // Charger les bâtiments après avoir défini la faction du joueur
+            loadBuildingsFromData(data.buildings);
         })
         .catch(err => {
             console.error("Erreur load world", err);
+            // Ne pas rediriger automatiquement, laissez le système de login gérer la redirection
         });
 }
 

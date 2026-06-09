@@ -1,3 +1,5 @@
+@use "../abstracts/variables" as v;
+
 #game {
     width: 100%;
     height: 100vh;
@@ -192,59 +194,79 @@
     h3 {
         margin: 0 0 0.5rem 0;
         font-size: 1.1rem;
-        color: #fff;
+        color: v.$color-black;
     }
+
+    h3::first-letter {text-transform: uppercase}
 
     p {
         margin: 0 0 0.5rem 0;
-        color: #ccc;
+        color: v.$color-black;
         font-size: 0.9rem;
     }
 
     .upgrade-costs {
-        margin: 0.5rem 0;
         padding: 0.5rem;
         background: rgba(0, 0, 0, 0.3);
         border-radius: 4px;
         font-size: 0.8rem;
 
-        &.unavailable {
-            color: #ff6b6b;
-        }
+        .upgrade-resource {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.3rem;
 
-        div {
-            margin: 0.2rem 0;
-
-            &.enough {
-                color: #51cf66;
+            &.unavailable {
+                color: #ff6b6b;
+                text-shadow: 0px 0px 2px v.$color-black;
             }
 
-            &.missing {
-                color: #ff6b6b;
+            div {
+                margin: 0.2rem 0;
+                font-weight: bold;
+                font-size: 0.9rem;
+
+                &.enough {
+                    color: #51cf66;
+                    text-shadow: 0px 0px 2px v.$color-black;
+                }
+
+                &.missing {
+                    color: #ff6b6b;
+                    text-shadow: 0px 0px 2px v.$color-black;
+                }
             }
         }
     }
 
     .popup-actions {
-        margin-top: 0.5rem;
+        margin: 0.5rem 0;
+        display: flex;
+        justify-content: space-around;
+        height: 40px;
 
         .btn-upgrade {
             padding: 6px 12px;
-            background: linear-gradient(135deg, #4f8cff, #3a6bc9);
+            background: #51cf66;
             border: none;
             border-radius: 4px;
-            color: white;
+            color: v.$color-black;
+            text-shadow: 0px 0px 2px v.$color-white;
             cursor: pointer;
             font-size: 0.85rem;
             transition: all 0.2s ease;
 
             &:hover:not(:disabled) {
                 transform: translateY(-1px);
-                box-shadow: 0 4px 12px rgba(79, 140, 255, 0.4);
+                box-shadow: 0 4px 12px rgba(79, 255, 100, 0.4);
             }
 
             &:disabled {
-                opacity: 0.5;
+                background: #ff6b6b;
+                color: v.$color-black;
+                text-shadow: 0px 0px 2px v.$color-white;
                 cursor: not-allowed;
             }
         }
@@ -273,4 +295,26 @@
     font-size: 0.75rem;
     padding: 0 5px 10px;
     text-align: center;
+}
+
+// Popup info styles
+.popup-info {
+    margin: 0.5rem 0;
+    padding: 0.5rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+
+    .info-item {
+        margin: 0.2rem 0;
+        font-size: 0.9rem;
+        color: #333;
+
+        strong {
+            color: #e74c3c;
+        }
+
+        &.production {
+            color: #3498db;
+        }
+    }
 }

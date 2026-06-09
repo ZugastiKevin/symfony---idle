@@ -128,7 +128,7 @@ export function initBaseUI() {
             radius: 600,
             color,
             weight: 2,
-            fillOpacity: 0.1
+            fillOpacity: 0
         }).addTo(map);
 
         previewMarker = L.marker(result.point).addTo(map);
@@ -228,6 +228,9 @@ function createBase(lat, lng) {
 
     baseCircle = L.circle(basePosition, {
         radius: 500,
+        color: 'blue',
+        weight: 2,
+        fillOpacity: 0
     }).addTo(map);
 
     const baseTypeId = 1;
@@ -286,9 +289,14 @@ export function loadOtherBase(lat, lng, pseudo, faction) {
 
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
 
+    // Couleur rouge pour les autres joueurs (pas le joueur actif)
+    const color = faction === currentPlayerFaction ? 'blue' : 'red';
+
     const circle = L.circle([lat, lng], {
         radius: 500,
-        color: 'red'
+        color: color,
+        weight: 2,
+        fillOpacity: 0
     }).addTo(map);
 
     const icon = createBaseIcon(map.getZoom(), faction);
@@ -348,6 +356,9 @@ export function loadBaseFromServer(lat, lng) {
 
     baseCircle = L.circle(basePosition, {
         radius: 500,
+        color: 'blue',
+        weight: 2,
+        fillOpacity: 0
     }).addTo(map);
 
     updateBaseDisplay();

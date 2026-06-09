@@ -16,6 +16,7 @@ import './scripts/Security/reset-btn.js';
 
 // Game-specific scripts (only loaded on game pages)
 import './scripts/Game/faction-game-choice.js';
+// Note: deliveryTimer.js est importé dans game-main.js pour être sûr que HTMX est chargé
 
 import "leaflet/dist/leaflet.css";
 

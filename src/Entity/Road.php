@@ -34,6 +34,11 @@ class Road
     #[ORM\OneToMany(targetEntity: ResourceDeposit::class, mappedBy: 'road')]
     private Collection $deposits;
 
+    public function __construct()
+    {
+        $this->deposits = new ArrayCollection();
+    }
+
     public function getId(): ?int
     {
         return $this->id;

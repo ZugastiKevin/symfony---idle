@@ -6,6 +6,17 @@ import { getCurrentPlayerFaction } from './base.js';
 // Cache des informations de bâtiments
 let buildingMarkers = new Map();
 
+// ID du joueur actif (initialisé depuis l'API)
+let currentPlayerId = null;
+
+/**
+ * Définit l'ID du joueur actif
+ * @param {number} id - L'ID du joueur connecté
+ */
+export function setCurrentPlayerId(id) {
+    currentPlayerId = id;
+}
+
 /**
  * Charge les bâtiments sur la carte avec leurs popups interactifs
  * @param {Array} buildings - Liste des bâtiments à afficher
@@ -34,15 +45,22 @@ export function loadBuildingsFromData(buildings) {
             return;
         }
 
+        // Utiliser la faction du bâtiment (ou fallback sur la faction du joueur)
+        const buildingFaction = b.faction || getCurrentPlayerFaction();
+
         // Créer l'icône avec l'image du bâtiment
-        const icon = createBuildingIcon(b.code);
+        const icon = createBuildingIcon(b.code, buildingFaction);
 
         // Stocker les données du building pour accès ultérieur
         const buildingData = {
             id: b.id,
             type: b.type,
             level: b.level,
-            code: b.code
+            code: b.code,
+            faction: buildingFaction,
+            ownerId: b.ownerId,
+            production: b.production || null,
+            resource_type: b.resource_type || null,
         };
 
         // Créer le marker avec popup statique (pas d'async)
@@ -60,14 +78,19 @@ export function loadBuildingsFromData(buildings) {
 }
 
 /**
+ * Vérifie si le bâtiment appartient au joueur actif
+ */
+function isOwnBuilding(building) {
+    return building.ownerId === currentPlayerId;
+}
+
+/**
  * Crée un popup simple (synchrone)
  */
 function createSimplePopup(building) {
     return `
         <div class="building-popup">
             <h3>${building.type || 'Bâtiment'}</h3>
-            <p>Niveau: ${building.level || 1}</p>
-            <div id="upgrade-info-${building.id}">Chargement...</div>
         </div>
     `;
 }
@@ -76,54 +99,33 @@ function createSimplePopup(building) {
  * Charge les infos d'amélioration en arrière-plan
  */
 async function loadUpgradeInfoAsync(buildingId, marker, buildingData) {
+    // Ne pas charger les infos d'amélioration pour les bâtiments ennemis
+    if (!isOwnBuilding(buildingData)) {
+        marker.setPopupContent(createSimplePopup(buildingData));
+        return;
+    }
+
     if (!buildingId) {
         marker.setPopupContent(createSimplePopup(buildingData));
         return;
     }
 
     try {
-        const res = await getUpgradeInfo(buildingId);
+        // Charger directement le contenu du popup
+        const res = await fetch(`/api/buildings/${buildingId}/popup-content`);
+
         if (!res.ok) {
+            console.warn(`Erreur API popup-content (building ${buildingId}):`, res.status);
             marker.setPopupContent(createSimplePopup(buildingData));
             return;
         }
 
-        const upgradeInfo = await res.json();
-        const canUpgrade = upgradeInfo?.canUpgrade ?? false;
-        const maxLevel = upgradeInfo?.maxLevel ?? 1;
-        const needed = upgradeInfo?.needed ?? {};
-        const available = upgradeInfo?.available ?? {};
+        const html = await res.text();
+        marker.setPopupContent(html);
+        buildingMarkers.set(buildingId, { marker, data: buildingData });
 
-        let costsHtml = '';
-        if (!canUpgrade && maxLevel > 1) {
-            costsHtml = '<div class="upgrade-costs unavailable">Coûts insuffisants</div>';
-        } else if (Object.keys(needed).length > 0) {
-            costsHtml = '<div class="upgrade-costs">';
-            for (const [resource, amount] of Object.entries(needed)) {
-                const has = available[resource] || 0;
-                const cls = has >= amount ? 'enough' : 'missing';
-                costsHtml += `<div class="${cls}">${resource}: ${has}/${amount}</div>`;
-            }
-            costsHtml += '</div>';
-        }
-
-        const popupContent = `
-            <div class="building-popup">
-                <h3>${buildingData.type}</h3>
-                <p>Niveau: ${buildingData.level} / ${maxLevel}</p>
-                ${costsHtml}
-                <div class="popup-actions">
-                    ${canUpgrade ?
-                        `<button onclick="window.upgradeBuilding(${buildingId})" class="btn-upgrade">Améliorer</button>` :
-                        `<button disabled class="btn-upgrade">Améliorer</button>`
-                    }
-                </div>
-            </div>
-        `;
-
-        marker.setPopupContent(popupContent);
     } catch (e) {
-        console.error("Erreur lors de la récupération des infos d'amélioration", e);
+        console.error("Erreur lors du chargement du popup", e);
         marker.setPopupContent(createSimplePopup(buildingData));
     }
 }
@@ -146,14 +148,15 @@ export function loadBuildings() {
 /**
  * Crée une icône (marker) pour un bâtiment avec son image spécifique.
  * @param {string} buildingCode - Le code du bâtiment (ex: "base", "iron_mine").
+ * @param {string} faction - La faction du bâtiment (optionnel, fallback sur le joueur actuel).
  * @returns {L.Icon} L'icône Leaflet personnalisée.
  */
-export function createBuildingIcon(buildingCode) {
-    const faction = getCurrentPlayerFaction();
+export function createBuildingIcon(buildingCode, faction = null) {
+    const actualFaction = faction || getCurrentPlayerFaction();
     const size = 70; // Taille par défaut des icônes
 
     return L.icon({
-        iconUrl: getBuildingImage(faction, buildingCode),
+        iconUrl: getBuildingImage(actualFaction, buildingCode),
         iconSize: [size, size],
         iconAnchor: [size / 2, size / 2],
         popupAnchor: [0, -size / 2]
@@ -171,16 +174,12 @@ export function getBuildingImage(faction, building) {
     const buildingSlug = building.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
     const factionSlug = (faction || 'default').toLowerCase();
 
-    // Si la faction est 'default' ou invalide, utiliser directement l'icône default
+    // Toujours utiliser l'icône de la faction en premier
+    // Le serveur ou le navigateur gérera le fallback si l'icône n'existe pas
+    // Si la faction est 'default', utiliser l'icône default directement
     if (factionSlug === 'default') {
         return `/assets/images/buildings/default/${buildingSlug}.png`;
     }
-
-    // Essayer d'abord l'icône de la faction
-    // Le serveur ou le navigateur gérera le fallback si l'icône n'existe pas
-    // Pour forcer le fallback côté client, vous pouvez:
-    // 1. Configurer le serveur web (Nginx/Apache) pour faire un try_files vers default
-    // 2. Utiliser une requête HEAD asyncone pour vérifier l'existence (coûteux)
 
     return `/assets/images/buildings/${factionSlug}/${buildingSlug}.png`;
 }

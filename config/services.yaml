@@ -40,3 +40,6 @@ services:
     Imagine\Image\ImagineInterface:
         class: Imagine\Gd\Imagine
 
+    App\Controller\Api\DeliveryController:
+        arguments:
+            $hub: '@mercure.hub.default'

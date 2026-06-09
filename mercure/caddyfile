@@ -1,0 +1,13 @@
+{
+    http_port 3000
+}
+
+127.0.0.1:3000 {
+    mercure {
+        publisher_jwt a3f8c2d91e4b7f06a3f8c2d91e4b7f06a3f8c2d91e4b7f06a3f8c2d91e4b7f06
+        subscriber_jwt a3f8c2d91e4b7f06a3f8c2d91e4b7f06a3f8c2d91e4b7f06a3f8c2d91e4b7f06
+        anonymous
+        cors_origins http://127.0.0.1:8000
+    }
+    respond /healthz 200
+}

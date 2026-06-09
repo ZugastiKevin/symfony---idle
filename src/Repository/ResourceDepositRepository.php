@@ -40,4 +40,15 @@ class ResourceDepositRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    public function findByChunkIdSafe(string $chunkId): array
+    {
+        try {
+            return $this->findByChunkId($chunkId);
+        } catch (\Exception $e) {
+            // Log l'erreur et retourne un tableau vide
+            error_log('ResourceDeposit findByChunkId error: ' . $e->getMessage());
+            return [];
+        }
+    }
 }

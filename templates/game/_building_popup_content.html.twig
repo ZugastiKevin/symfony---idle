@@ -1,0 +1,45 @@
+<div id="building-popup-{{ building.id }}" class="building-popup">
+    <h3>{{ buildingType.name }}</h3>
+    <p>Niveau: {{ level }} / {{ maxLevel }}</p>
+
+    <div class="popup-actions">
+        {% if canUpgrade %}
+            <button onclick="window.upgradeBuilding({{ building.id }})" class="btn-upgrade">Améliorer</button>
+        {% else %}
+            <button disabled class="btn-upgrade">Améliorer</button>
+        {% endif %}
+
+        <div class="upgrade-costs">
+            {% for resource, amount in needed %}
+                {% set has = available[resource] ?? 0 %}
+                {% set cls = has >= amount ? 'enough' : 'missing' %}
+                <div class="upgrade-resource">
+                    {{ resource }}:
+                    <div class="{{ cls }}">{{ has }} / {{ amount }}</div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% if production > 0 and resourceType %}
+        <p class="production-rate">
+            Production: <strong>{{ production }}</strong> {{ resourceType }}/h
+        </p>
+    {% endif %}
+
+    <div id="delivery-timer-{{ building.id }}" data-time-remaining="{{ timeRemaining }}">
+        <pre>{{ timeRemaining|json_encode|e }}</pre>
+        {% if timeRemaining is null or timeRemaining == 'undefined' %}
+            <p class="delivery-timer">Aucune livraison prévue</p>
+        {% elseif timeRemaining == 0 %}
+            <p class="delivery-timer">Livraison terminée</p>
+        {% elseif timeRemaining < 0 %}
+            {% set mins = ((timeRemaining * -1) / 60)|round(0, 'floor') %}
+            <p class="delivery-timer">Livraison programmée dans <strong>{{ mins }}min</strong></p>
+        {% else %}
+            {% set mins = (timeRemaining / 60)|round(0, 'floor') %}
+            {% set secs = timeRemaining % 60 %}
+            <p class="delivery-timer">Prochain convoi: <strong>{{ mins }}min {{ secs }}s</strong></p>
+        {% endif %}
+    </div>
+</div>

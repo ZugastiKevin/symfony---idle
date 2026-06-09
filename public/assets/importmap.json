@@ -1,6 +1,6 @@
 {
     "app": {
-        "path": "\/assets\/app-8a53354b9549b495de13955771119551.js",
+        "path": "\/assets\/app-d69e89c2d7110cf3f56b93b2b2083bf7.js",
         "type": "js"
     },
     "\/assets\/styles\/app.scss": {
@@ -28,7 +28,7 @@
         "type": "js"
     },
     "\/assets\/scripts\/Game\/faction-game-choice.js": {
-        "path": "\/assets\/scripts\/Game\/faction-game-choice-e15fa703c79e35e9a65db47515159441.js",
+        "path": "\/assets\/scripts\/Game\/faction-game-choice-720fa63a164f6246c8b90e4ffb8bbadd.js",
         "type": "js"
     },
     "@hotwired\/stimulus": {
@@ -40,7 +40,7 @@
         "type": "js"
     },
     "\/assets\/@symfony\/stimulus-bundle\/controllers.js": {
-        "path": "\/assets\/@symfony\/stimulus-bundle\/controllers-9d42643c079ab11f27a3a9614f81cc2f.js",
+        "path": "\/assets\/@symfony\/stimulus-bundle\/controllers-2029c30d2f66c15faf7a9b0e200ea353.js",
         "type": "js"
     },
     "\/assets\/@symfony\/ux-turbo\/turbo_controller.js": {
@@ -49,6 +49,10 @@
     },
     "\/assets\/controllers\/hello_controller.js": {
         "path": "\/assets\/controllers\/hello_controller-87b6385829902356204e988334af9bf5.js",
+        "type": "js"
+    },
+    "\/assets\/controllers\/htmx_controller.js": {
+        "path": "\/assets\/controllers\/htmx_controller-ddff8372c28bb9f6be9cd1358cf782e4.js",
         "type": "js"
     },
     "@hotwired\/turbo": {

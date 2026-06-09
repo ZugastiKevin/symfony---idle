@@ -29,13 +29,25 @@ class BuildingRepository extends ServiceEntityRepository
         $buildingData = [];
 
         foreach ($buildings as $b) {
+            $buildingType = $b->getBuildingType();
+            $level = $b->getLevel() ?? 1;
+            $productionRate = $buildingType->getProductionRate() ?? 0;
+            $resourceType = $buildingType->getResourceType()?->getLabel();
+
+            // Calculer le taux de production avec le niveau (et futurs modificateurs)
+            $production = $productionRate * $level;
+
             $buildingData[] = [
                 'id' => $b->getId(),
                 'lat' => $b->getLatitudeBuild(),
                 'lng' => $b->getLongitudeBuild(),
-                'type' => $b->getBuildingType()->getName(),
-                'code' => $b->getBuildingType()->getCode(),
-                'level' => $b->getLevel(),
+                'type' => $buildingType->getName(),
+                'code' => $buildingType->getCode(),
+                'level' => $level,
+                'ownerId' => $b->getUser()->getId(),
+                'production_rate' => $productionRate > 0 ? $production : null,
+                'production' => $production > 0 ? $production : null,
+                'resource_type' => $resourceType,
             ];
         }
 
@@ -83,6 +95,30 @@ class BuildingRepository extends ServiceEntityRepository
             ->setParameter('name', 'base')
             ->getQuery()
             ->getOneOrNullResult();
+    }
+
+    /**
+     * Trouve les bâtiments producteurs sans livraison en cours
+     * Seuls les bâtiments avec production (> 0) sont retournés
+     * et ceux créés depuis plus de 1h (pour permettre la première production)
+     */
+    public function getProducerBuildingsWithoutDelivery(User $user): array
+    {
+        $now = new \DateTimeImmutable();
+        $oneHourAgo = $now->modify('-1 hour');
+
+        return $this->createQueryBuilder('b')
+            ->join('b.buildingType', 'bt')
+            ->where('b.user = :user')
+            ->andWhere('bt.production_rate > 0')
+            ->andWhere('b.createdAt IS NOT NULL AND b.createdAt <= :oneHourAgo')
+            ->leftJoin('b.deliveries', 'd')
+            ->andWhere('d.id IS NULL OR d.status = :deliveredStatus')
+            ->setParameter('user', $user)
+            ->setParameter('oneHourAgo', $oneHourAgo)
+            ->setParameter('deliveredStatus', \App\Entity\ResourceDelivery::STATUS_DELIVERED)
+            ->getQuery()
+            ->getResult();
     }
 
     /**

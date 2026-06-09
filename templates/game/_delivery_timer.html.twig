@@ -1,0 +1,17 @@
+{% if timeRemaining is null %}
+    <p class="delivery-timer">Chargement...</p>
+{% elseif timeRemaining == 0 %}
+    <p class="delivery-timer">Livraison terminée</p>
+{% elseif timeRemaining < 0 %}
+    {% set totalSeconds = timeRemaining * -1 %}
+    {% set mins = (totalSeconds / 60)|round(0, 'floor') %}
+    <p class="delivery-timer">Livraison programmée dans <strong>{{ mins }}min</strong></p>
+{% else %}
+    {% if formattedTime is not null %}
+        <p class="delivery-timer">Prochain convoi: <strong>{{ formattedTime }}</strong></p>
+    {% else %}
+        {% set mins = (timeRemaining / 60)|round(0, 'floor') %}
+        {% set secs = timeRemaining % 60 %}
+        <p class="delivery-timer">Prochain convoi: <strong>{{ mins }}min {{ secs }}s</strong></p>
+    {% endif %}
+{% endif %}

@@ -19,7 +19,7 @@ class RoadRepository extends ServiceEntityRepository
 
     /**
      * Trouve toutes les routes appartenant à un chunk spécifique
-     * 
+     *
      * @param Chunk $chunk
      * @return array
      */
@@ -28,5 +28,16 @@ class RoadRepository extends ServiceEntityRepository
         return $this->findBy([
             'chunk' => $chunk
         ]);
+    }
+
+    /**
+     * Trouve toutes les routes avec leurs points
+     */
+    public function findAllWithPoints(): array
+    {
+        return $this->createQueryBuilder('r')
+            ->addSelect('r.points')
+            ->getQuery()
+            ->getResult();
     }
 }

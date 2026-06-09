@@ -2,6 +2,7 @@ import { initMap, loadWorld, map } from './map.js';
 import { initGPS } from './gps.js';
 import { initBaseUI } from './base.js';
 import { initBuildMode, isBuildModeActive } from './buildMode.js';
+import './deliveryTimer.js';
 
 document.addEventListener('DOMContentLoaded', () => {
 
